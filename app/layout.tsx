@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Template",
-  description: "Common admin page template",
+  title: "레미 어드민",
+  description: "레미 축구 티켓 예약 서비스 관리자 페이지",
 };
 
 export default function RootLayout({

@@ -3,8 +3,25 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* 레미 어드민 디자인 토큰 (Figma 06 관리자) */
+  --color-page: #f9fafc;
+  --color-ink: #252525;
+  --color-muted: #999999;
+  --color-line: #dddddd;
+  --color-brand: #f6ae24; /* 예매 / 선택 강조 (주황) */
+  --color-brand-strong: #f06418; /* ↗ 화살표 강조 */
+  --color-rental: #da1d52; /* 취소 강조 (핑크) */
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans), "Pretendard", "Apple SD Gothic Neo", Arial,
+    sans-serif;
 }

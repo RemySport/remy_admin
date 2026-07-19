@@ -1,13 +1,13 @@
 "use client";
 
-import { Home, User, LayoutList, FileText } from "lucide-react";
+import { CalendarDays, Home, Ticket, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   { icon: Home, href: "/dashboard", label: "홈" },
-  { icon: User, href: "/dashboard/members", label: "회원" },
-  { icon: LayoutList, href: "/dashboard/products", label: "제품" },
-  { icon: FileText, href: "/dashboard/orders", label: "주문" },
+  { icon: User, href: "/dashboard/members", label: "회원관리" },
+  { icon: CalendarDays, href: "/dashboard/products", label: "경기관리" },
+  { icon: Ticket, href: "/dashboard/orders", label: "예매관리" },
 ];
 
 export default function BottomNav() {
@@ -16,19 +16,24 @@ export default function BottomNav() {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <nav className="bg-gray-900 rounded-full px-8 py-3.5 flex items-center gap-10 shadow-2xl">
+      <nav className="bg-[#1a1a1a] rounded-full px-5 py-2.5 flex items-center gap-4 shadow-2xl">
         {navItems.map(({ icon: Icon, href, label }) => {
-          const isActive = pathname === href;
+          const isActive =
+            href === "/dashboard"
+              ? pathname === href
+              : pathname.startsWith(href);
           return (
             <button
               key={href}
               onClick={() => router.push(href)}
               aria-label={label}
-              className={`transition-colors ${
-                isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
+              className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
+                isActive
+                  ? "bg-white/12 text-white"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              <Icon size={22} />
+              <Icon size={22} strokeWidth={1.8} />
             </button>
           );
         })}

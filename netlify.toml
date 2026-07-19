@@ -1,0 +1,15 @@
+# Netlify deployment configuration for Next.js
+# https://docs.netlify.com/frameworks/next-js/overview/
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Next.js 16 requires Node.js 20.9 or later
+  NODE_VERSION = "22"
+
+# Netlify's official Next.js runtime — handles SSR, ISR,
+# image optimization, and API routes automatically
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

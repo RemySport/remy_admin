@@ -1,31 +1,99 @@
-import ChartCard from "@/components/ChartCard";
-import ProgressCard from "@/components/ProgressCard";
+"use client";
+
+import { useEffect, useState } from "react";
+import Header from "@/components/Header";
+import MockBanner from "@/components/MockBanner";
+import OrderChart from "@/components/dashboard/OrderChart";
+import PlaceholderCard from "@/components/dashboard/PlaceholderCard";
+import StatNumberCard from "@/components/dashboard/StatNumberCard";
+import { getDashboard } from "@/lib/services";
+import type { DashboardData } from "@/lib/types";
 
 export default function DashboardPage() {
-  return (
-    <div className="space-y-4">
-      {/* Top row: two chart cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ChartCard
-          title="결제내역 현황 (표시)"
-          subtitle="- 퍼센트와 숫자로 표시"
-        />
-        <ChartCard
-          title="결제내역 현황 (표시)"
-          subtitle="- 퍼센트와 숫자로 표시"
-        />
-      </div>
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [fromMock, setFromMock] = useState(false);
 
-      {/* Bottom: progress/stats card */}
-      <ProgressCard
-        title="진행현황"
-        subtitle="- 이번주에 회원"
-        stats={[
-          { icon: "users",        label: "가입 (기업)", value: 1421, unit: "명" },
-          { icon: "subscription", label: "구독수",      value: 245,  unit: "건 (누적)" },
-          { icon: "consulting",   label: "컨설팅수",    value: 86,   unit: "건" },
-        ]}
-      />
+  useEffect(() => {
+    let alive = true;
+    getDashboard().then((res) => {
+      if (!alive) return;
+      setData(res.data);
+      setFromMock(res.fromMock);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return (
+    <>
+      <Header title="레미 어드민" userName="홍길동" />
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
+        {fromMock && <MockBanner />}
+
+        {!data ? (
+          <LoadingState />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {/* 좌측 열 */}
+            <div className="flex flex-col gap-4">
+              <StatNumberCard
+                title="회원정보"
+                subtitle={data.memberInfo.date}
+                stats={data.memberInfo.stats}
+              />
+              <OrderChart
+                title="예매현황"
+                subtitle="시간대별 예매내역 표시"
+                data={data.orderChart}
+              />
+              <PlaceholderCard
+                title="고객 피드백"
+                subtitle={data.date}
+                minBodyHeight={140}
+              />
+            </div>
+
+            {/* 중앙 열 */}
+            <div className="flex flex-col gap-4">
+              <PlaceholderCard
+                title="예매내역 (온라인)"
+                subtitle={data.date}
+                minBodyHeight={300}
+              />
+              <PlaceholderCard
+                title="예매내역 (현장)"
+                subtitle={data.date}
+                minBodyHeight={300}
+              />
+            </div>
+
+            {/* 우측 열 */}
+            <div className="flex flex-col gap-4">
+              <StatNumberCard
+                title="티켓 판매현황"
+                subtitle={data.ticketInfo.subtitle}
+                stats={data.ticketInfo.stats}
+                className="flex-1"
+              />
+            </div>
+          </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-64 animate-pulse rounded-2xl border border-[#eeeeee] bg-white/60"
+        />
+      ))}
     </div>
   );
 }
