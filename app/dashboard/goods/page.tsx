@@ -4,58 +4,64 @@ import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import MockBanner from "@/components/MockBanner";
-import SelectBox from "@/components/members/SelectBox";
-import TicketCard from "@/components/products/TicketCard";
-import TicketFormModal from "@/components/products/TicketFormModal";
-import { STATUS_FILTERS } from "@/lib/mock/tickets";
+import GoodsCard from "@/components/goods/GoodsCard";
+import GoodsFormModal, { type GoodsFormValues } from "@/components/goods/GoodsFormModal";
 import {
-  createTicket,
-  deleteTicket,
-  getTickets,
-  updateTicketStatus,
+  createGoods,
+  deleteGoods,
+  getGoods,
+  getGoodsList,
+  updateGoods,
 } from "@/lib/services";
-import type { CreateTicketRequest, TicketSummary } from "@/lib/types";
+import type { AdminGoodsDetail, AdminGoodsSummary } from "@/lib/types";
 
-export default function ProductsPage() {
-  const [tickets, setTickets] = useState<TicketSummary[]>([]);
+export default function GoodsPage() {
+  const [goodsList, setGoodsList] = useState<AdminGoodsSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [fromMock, setFromMock] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("전체");
   const [keyword, setKeyword] = useState("");
   const [formOpen, setFormOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<AdminGoodsDetail | null>(null);
 
   const load = () => {
     setLoading(true);
-    getTickets({ status, keyword }).then((res) => {
-      setTickets(res.data.tickets);
+    getGoodsList({ keyword }).then((res) => {
+      setGoodsList(res.data.goodsList);
       setTotal(res.data.totalElements);
       setFromMock(res.fromMock);
       setLoading(false);
     });
   };
 
-  useEffect(load, [status, keyword]);
+  useEffect(load, [keyword]);
 
-  const handleChangeStatus = async (id: number, reservationStatus: "OPEN" | "PENDING" | "CLOSED") => {
-    await updateTicketStatus(id, { reservationStatus, isReservable: reservationStatus === "OPEN" });
+  const handleCreate = async (values: GoodsFormValues) => {
+    await createGoods(values);
+    setFormOpen(false);
     load();
+  };
+
+  const handleUpdate = async (values: GoodsFormValues) => {
+    if (!editTarget) return;
+    await updateGoods(editTarget.goodsId, values);
+    setEditTarget(null);
+    load();
+  };
+
+  const handleEdit = async (id: number) => {
+    const res = await getGoods(id);
+    setEditTarget(res.data);
   };
 
   const handleDelete = async (id: number) => {
-    await deleteTicket(id);
-    load();
-  };
-
-  const handleCreate = async (request: CreateTicketRequest) => {
-    await createTicket(request);
-    setFormOpen(false);
+    await deleteGoods(id);
     load();
   };
 
   return (
     <>
-      <Header title="티켓관리" userName="홍길동" />
+      <Header title="굿즈관리" userName="홍길동" />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
         {fromMock && <MockBanner />}
@@ -66,12 +72,11 @@ export default function ProductsPage() {
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <SelectBox value={status} hint="상태선택" options={STATUS_FILTERS} onChange={setStatus} />
             <div className="flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5">
               <input
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                placeholder="팀 / 경기장 검색"
+                placeholder="상품명 검색"
                 className="w-40 bg-transparent text-sm text-ink outline-none placeholder:text-[#bbbbbb]"
               />
               <Search size={16} className="text-[#888888]" />
@@ -80,41 +85,45 @@ export default function ProductsPage() {
               onClick={() => setFormOpen(true)}
               className="flex items-center gap-1.5 rounded-lg bg-[#111111] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-black"
             >
-              <Plus size={16} /> 티켓 등록
+              <Plus size={16} /> 굿즈 등록
             </button>
           </div>
         </div>
 
         {loading ? (
-          <TicketGridSkeleton />
-        ) : tickets.length === 0 ? (
+          <GoodsGridSkeleton />
+        ) : goodsList.length === 0 ? (
           <div className="rounded-2xl border border-[#eeeeee] bg-white py-20 text-center text-sm text-muted">
-            조건에 맞는 티켓이 없습니다.
+            등록된 굿즈가 없습니다.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {tickets.map((t) => (
-              <TicketCard
-                key={t.ticketId}
-                ticket={t}
-                onChangeStatus={handleChangeStatus}
-                onDelete={handleDelete}
-              />
+            {goodsList.map((g) => (
+              <GoodsCard key={g.goodsId} goods={g} onEdit={handleEdit} onDelete={handleDelete} />
             ))}
           </div>
         )}
       </main>
 
-      {formOpen && <TicketFormModal onSubmit={handleCreate} onClose={() => setFormOpen(false)} />}
+      {formOpen && (
+        <GoodsFormModal onSubmit={handleCreate} onClose={() => setFormOpen(false)} />
+      )}
+      {editTarget && (
+        <GoodsFormModal
+          initial={editTarget}
+          onSubmit={handleUpdate}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
     </>
   );
 }
 
-function TicketGridSkeleton() {
+function GoodsGridSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-44 animate-pulse rounded-2xl border border-[#eeeeee] bg-white/60" />
+        <div key={i} className="h-56 animate-pulse rounded-2xl border border-[#eeeeee] bg-white/60" />
       ))}
     </div>
   );

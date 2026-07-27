@@ -58,3 +58,188 @@ export interface MemberListResponse {
   total: number;
   members: Member[];
 }
+
+// ---------------------------------------------------------------------------
+// 티켓(경기) 관리
+// ---------------------------------------------------------------------------
+
+export interface TicketSummary {
+  ticketId: number;
+  title: string;
+  matchDatetime: string;
+  stadiumName: string | null;
+  leagueName: string | null;
+  reservationStatus: string;
+  isReservable: boolean;
+  minPrice: number | null;
+}
+
+export interface TicketListResponse {
+  totalElements: number;
+  totalPages: number;
+  tickets: TicketSummary[];
+}
+
+export interface TicketOptionItem {
+  ticketOptionId: number;
+  seatType: string;
+  price: number;
+  currency: string;
+  maxQuantity: number;
+  isActive: boolean;
+}
+
+export interface TicketDetail {
+  ticketId: number;
+  competitionType: string;
+  leagueId: number | null;
+  leagueName: string | null;
+  tournamentId: number | null;
+  tournamentName: string | null;
+  homeTeamId: number;
+  homeTeamName: string;
+  awayTeamId: number;
+  awayTeamName: string;
+  stadiumId: number;
+  stadiumName: string;
+  matchDatetime: string;
+  timezone: string;
+  reservationStatus: string;
+  isReservable: boolean;
+  sourceUrl: string | null;
+  ticketOptions: TicketOptionItem[];
+}
+
+export interface TicketOptionInput {
+  seatType: string;
+  price: number;
+  currency: string;
+  maxQuantity?: number;
+}
+
+export interface CreateTicketRequest {
+  competitionType: string;
+  leagueId?: number | null;
+  tournamentId?: number | null;
+  homeTeamId: number;
+  awayTeamId: number;
+  stadiumId: number;
+  matchDatetime: string;
+  timezone: string;
+  reservationStatus: string;
+  isReservable?: boolean;
+  sourceUrl?: string | null;
+  ticketOptions?: TicketOptionInput[];
+}
+
+export type UpdateTicketRequest = Partial<CreateTicketRequest>;
+
+export interface StadiumBrief {
+  stadiumId: number;
+  name: string;
+  city: string | null;
+  country: string | null;
+}
+
+export interface LeagueBrief {
+  leagueId: number;
+  name: string;
+  country: string | null;
+  logoUrl: string | null;
+}
+
+export interface TeamBrief {
+  teamId: number;
+  name: string;
+  leagueId: number | null;
+  leagueName: string | null;
+  logoUrl: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// 구매(예약) 관리
+// ---------------------------------------------------------------------------
+
+export interface OrderSummary {
+  orderId: number;
+  buyerName: string;
+  buyerEmail: string;
+  ticketTitle: string;
+  seatType: string | null;
+  quantity: number;
+  totalPrice: number;
+  status: string;
+  reservedAt: string | null;
+}
+
+export interface OrderListResponse {
+  totalElements: number;
+  totalPages: number;
+  orders: OrderSummary[];
+}
+
+export interface OrderDetail {
+  orderId: number;
+  buyerId: number;
+  buyerName: string;
+  buyerEmail: string;
+  ticketId: number;
+  ticketTitle: string;
+  seatType: string | null;
+  quantity: number;
+  deliveryMethod: string;
+  totalPrice: number;
+  status: string;
+  reservedAt: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// 굿즈 관리
+// ---------------------------------------------------------------------------
+
+export interface AdminGoodsSummary {
+  goodsId: number;
+  name: string;
+  price: number;
+  stock: number;
+  thumbnailUrl: string | null;
+  isSoldOut: boolean;
+}
+
+export interface AdminGoodsListResponse {
+  totalElements: number;
+  totalPages: number;
+  goodsList: AdminGoodsSummary[];
+}
+
+export interface AdminGoodsOption {
+  optionId: number | null;
+  name: string;
+  values: string[];
+}
+
+export interface AdminGoodsDetail {
+  goodsId: number;
+  name: string;
+  description: string | null;
+  price: number;
+  stock: number;
+  imageUrls: string[];
+  options: AdminGoodsOption[];
+}
+
+export interface GoodsOptionInput {
+  name: string;
+  values: string[];
+}
+
+export interface CreateGoodsRequest {
+  name: string;
+  description?: string | null;
+  price: number;
+  stock?: number;
+  imageUrls?: string[];
+  options?: GoodsOptionInput[];
+}
+
+export type UpdateGoodsRequest = Partial<CreateGoodsRequest>;

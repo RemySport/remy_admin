@@ -2,15 +2,32 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ApiRequestError } from "@/lib/api";
+import { adminLogin } from "@/lib/services";
 
 export default function LoginPage() {
   const router = useRouter();
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    setError(null);
+    setLoading(true);
+    try {
+      await adminLogin(id, password);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(
+        err instanceof ApiRequestError
+          ? err.message
+          : "로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,13 +44,13 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                아이디
+                이메일
               </label>
               <input
-                type="text"
+                type="email"
                 value={id}
                 onChange={(e) => setId(e.target.value)}
-                placeholder="아이디를 입력하세요"
+                placeholder="이메일을 입력하세요"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
               />
             </div>
@@ -49,11 +66,13 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
               />
             </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <button
               type="submit"
-              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl transition active:scale-95"
+              disabled={loading}
+              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl transition active:scale-95 disabled:opacity-60"
             >
-              로그인
+              {loading ? "로그인 중..." : "로그인"}
             </button>
           </form>
         </div>

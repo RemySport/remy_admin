@@ -23,6 +23,35 @@ export interface ApiResult<T> {
 
 const DEFAULT_TIMEOUT = 4000;
 
+/** BaseResponse 공통 포맷 (백엔드 global/common/BaseResponse). */
+interface BaseResponse<T> {
+  code: number | string;
+  message: string;
+  result: T;
+  isSuccess: boolean;
+}
+
+function isBaseResponse(body: unknown): body is BaseResponse<unknown> {
+  return (
+    typeof body === "object" &&
+    body !== null &&
+    "isSuccess" in body &&
+    "result" in body
+  );
+}
+
+/** 백엔드가 BaseResponse 포맷({ code, message, result, isSuccess })이면 result 를 벗겨서 반환한다. */
+function unwrap<T>(body: unknown): T {
+  return (isBaseResponse(body) ? body.result : body) as T;
+}
+
+export class ApiRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
+
 /**
  * `path` 로 GET 요청을 보내고, 실패하면 `fallback`(mock) 을 반환한다.
  *
@@ -38,17 +67,20 @@ export async function fetchWithFallback<T>(
     const res = await fetch(`${API_BASE}${path}`, {
       // 캐시 없이 매번 시도 (실서버 붙기 전까지는 사실상 항상 실패)
       cache: "no-store",
+      // 쿠키(accessToken/refreshToken) 기반 인증이므로 항상 함께 전송
+      credentials: "include",
       signal: AbortSignal.timeout(DEFAULT_TIMEOUT),
       headers: { "Content-Type": "application/json" },
       ...init,
     });
 
-    if (!res.ok) {
+    const body = await res.json();
+
+    if (!res.ok || (isBaseResponse(body) && body.isSuccess === false)) {
       throw new Error(`API ${path} 응답 오류: ${res.status}`);
     }
 
-    const data = (await res.json()) as T;
-    return { data, fromMock: false };
+    return { data: unwrap<T>(body), fromMock: false };
   } catch (err) {
     // 실서버가 없거나 오류일 때 — mock 으로 폴백
     if (process.env.NODE_ENV !== "production") {
@@ -59,4 +91,28 @@ export async function fetchWithFallback<T>(
     }
     return { data: fallback, fromMock: true };
   }
+}
+
+/**
+ * mock 폴백 없이 실패 시 throw 하는 요청 헬퍼. 로그인/생성/수정/삭제 등 쓰기 작업에 사용한다.
+ * 백엔드 응답이 BaseResponse 포맷이면 result 를 벗겨서 반환한다.
+ */
+export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    cache: "no-store",
+    credentials: "include",
+    signal: AbortSignal.timeout(DEFAULT_TIMEOUT),
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+
+  const body = await res.json().catch(() => null);
+
+  if (!res.ok || (isBaseResponse(body) && body.isSuccess === false)) {
+    const message =
+      (isBaseResponse(body) ? body.message : null) ?? `API ${path} 요청 실패 (${res.status})`;
+    throw new ApiRequestError(message);
+  }
+
+  return unwrap<T>(body);
 }

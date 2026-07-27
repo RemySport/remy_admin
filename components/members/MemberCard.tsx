@@ -3,6 +3,7 @@
 import { MoreVertical } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { GROUP_OPTIONS, STATUS_OPTIONS } from "@/lib/mock/members";
+import { updateMemberGroup, updateMemberStatus } from "@/lib/services";
 import type { Member, MemberGroup, MemberStatus } from "@/lib/types";
 import RadioModal from "./RadioModal";
 
@@ -119,8 +120,10 @@ export default function MemberCard({ member }: { member: Member }) {
           initial={group}
           labelSuffix="그룹"
           onApply={(v) => {
-            setGroup(v);
             setModal(null);
+            updateMemberGroup(member.id, v)
+              .then(() => setGroup(v))
+              .catch(() => alert("그룹 변경에 실패했습니다."));
           }}
           onClose={() => setModal(null)}
         />
@@ -131,8 +134,10 @@ export default function MemberCard({ member }: { member: Member }) {
           options={STATUS_OPTIONS.map((o) => ({ value: o.value, desc: o.desc }))}
           initial={status}
           onApply={(v) => {
-            setStatus(v);
             setModal(null);
+            updateMemberStatus(member.id, v)
+              .then(() => setStatus(v))
+              .catch(() => alert("상태 변경에 실패했습니다."));
           }}
           onClose={() => setModal(null)}
         />

@@ -1,13 +1,14 @@
 "use client";
 
-import { CalendarDays, Home, Ticket, User } from "lucide-react";
+import { CalendarDays, Gift, Home, Ticket, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   { icon: Home, href: "/dashboard", label: "홈" },
   { icon: User, href: "/dashboard/members", label: "회원관리" },
-  { icon: CalendarDays, href: "/dashboard/products", label: "경기관리" },
-  { icon: Ticket, href: "/dashboard/orders", label: "예매관리" },
+  { icon: CalendarDays, href: "/dashboard/products", label: "티켓관리" },
+  { icon: Ticket, href: "/dashboard/orders", label: "구매관리" },
+  { icon: Gift, href: "/dashboard/goods", label: "굿즈관리" },
 ];
 
 export default function BottomNav() {
