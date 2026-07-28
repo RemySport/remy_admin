@@ -13,3 +13,38 @@
 # image optimization, and API routes automatically
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# ---------------------------------------------------------------------------
+# 백엔드 프록시
+#
+# 백엔드(lift_coma_backend)가 아직 HTTPS 인증서가 없는 IP(13.209.84.103:8080)로
+# 떠 있어서, 브라우저가 https://remyadmin.netlify.app 에서 곧바로 http://... 로
+# 요청을 보내면 Mixed Content 로 차단된다.
+#
+# 그래서 브라우저는 항상 같은(HTTPS) 오리진으로만 요청하게 하고, Netlify 서버가
+# 대신 백엔드로 중계(프록시)하도록 한다. lib/services.ts 의 경로들
+# (/admin/*, /leagues, /teams)을 그대로 프록시한다.
+#
+# 👉 정식 도메인은 https://api.remy-sp.com 으로 정해짐 (DNS 는 이미 같은 IP로
+#    연결돼 있음). 다만 아직 그 도메인에 HTTPS(443)가 응답하지 않아서, 지금
+#    "to" 를 그 도메인으로 바꾸면 오히려 요청이 실패한다. 백엔드에 인증서가
+#    붙어 https://api.remy-sp.com 이 실제로 응답하기 시작하면, 아래 "to" 주소를
+#    그 도메인(https://api.remy-sp.com/:splat 등)으로 바꾸거나, 이 프록시 자체를
+#    없애고 NEXT_PUBLIC_API_BASE 를 그 도메인으로 직접 지정해도 된다.
+[[redirects]]
+  from = "/admin/*"
+  to = "http://13.209.84.103:8080/admin/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/leagues"
+  to = "http://13.209.84.103:8080/leagues"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/teams"
+  to = "http://13.209.84.103:8080/teams"
+  status = 200
+  force = true

@@ -10,9 +10,18 @@
 //    fallback 으로만 남고, 화면 코드는 손댈 필요가 없습니다.
 // -----------------------------------------------------------------------------
 
-/** 가상 API 주소 — 실제 서버가 없으므로 항상 실패 → mock 으로 폴백됩니다. */
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "https://api.remy.example.com";
+/**
+ * API 요청 베이스 URL.
+ *
+ * - 로컬 개발: .env.local 의 NEXT_PUBLIC_API_BASE (예: http://localhost:8080) 사용.
+ * - 배포(Netlify) 프로덕션: 빈 문자열("")로 두어 같은(HTTPS) 오리진으로 요청하고,
+ *   netlify.toml 의 프록시 redirect(/admin/*, /leagues, /teams)가 실제 백엔드로
+ *   중계한다. 백엔드가 아직 인증서 없는 IP(http://13.209.84.103:8080)라서
+ *   브라우저가 직접 호출하면 Mixed Content 로 차단되기 때문.
+ * - 백엔드 도메인(https://api.remy-sp.com)에 인증서가 붙으면, 프록시 없이
+ *   NEXT_PUBLIC_API_BASE 를 그 도메인으로 바로 지정해도 된다.
+ */
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
 /** 폴백 요청 결과. fromMock 으로 지금 화면이 mock 인지 구분할 수 있습니다. */
 export interface ApiResult<T> {
