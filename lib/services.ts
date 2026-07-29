@@ -3,6 +3,11 @@
 import { apiRequest, fetchWithFallback, type ApiResult } from "./api";
 import { mockDashboard } from "./mock/dashboard";
 import { mockMembers } from "./mock/members";
+import {
+  mockAdminAccounts,
+  mockAdminGrades,
+  mockAdminMe,
+} from "./mock/admin";
 import { mockGoodsDetail, mockGoodsList } from "./mock/goods";
 import { mockOrderDetail, mockOrders } from "./mock/orders";
 import {
@@ -13,8 +18,15 @@ import {
   mockTickets,
 } from "./mock/tickets";
 import type {
+  AdminAccountListResponse,
+  AdminAccountSummary,
   AdminGoodsDetail,
   AdminGoodsListResponse,
+  AdminGradeListResponse,
+  AdminGradeSummary,
+  AdminMeResponse,
+  CreateAdminAccountRequest,
+  CreateAdminGradeRequest,
   CreateGoodsRequest,
   CreateTicketRequest,
   DashboardData,
@@ -28,6 +40,7 @@ import type {
   TeamBrief,
   TicketDetail,
   TicketListResponse,
+  UpdateAdminGradeRequest,
   UpdateGoodsRequest,
   UpdateTicketRequest,
 } from "./types";
@@ -240,4 +253,64 @@ export function adminLogin(email: string, password: string) {
 
 export function adminLogout() {
   return apiRequest<string>("/admin/auth/logout", { method: "POST" });
+}
+
+/** 로그인한 어드민 세션 정보 + 등급별 메뉴 권한 조회 */
+export function getAdminMe(): Promise<ApiResult<AdminMeResponse>> {
+  return fetchWithFallback("/admin/auth/me", mockAdminMe);
+}
+
+// ---------------------------------------------------------------------------
+// 어드민 계정 관리 (슈퍼 관리자 전용)
+// ---------------------------------------------------------------------------
+
+export function getAdminAccounts(): Promise<ApiResult<AdminAccountListResponse>> {
+  return fetchWithFallback("/admin/accounts", mockAdminAccounts);
+}
+
+export function createAdminAccount(request: CreateAdminAccountRequest) {
+  return apiRequest<AdminAccountSummary>("/admin/accounts", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export function updateAdminAccountGrade(id: number, gradeId: number) {
+  return apiRequest<AdminAccountSummary>(`/admin/accounts/${id}/grade`, {
+    method: "PATCH",
+    body: JSON.stringify({ gradeId }),
+  });
+}
+
+export function updateAdminAccountStatus(id: number, status: "ACTIVE" | "BLOCKED") {
+  return apiRequest<AdminAccountSummary>(`/admin/accounts/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 어드민 등급 관리 (슈퍼 관리자 전용)
+// ---------------------------------------------------------------------------
+
+export function getAdminGrades(): Promise<ApiResult<AdminGradeListResponse>> {
+  return fetchWithFallback("/admin/grades", mockAdminGrades);
+}
+
+export function createAdminGrade(request: CreateAdminGradeRequest) {
+  return apiRequest<AdminGradeSummary>("/admin/grades", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export function updateAdminGrade(id: number, request: UpdateAdminGradeRequest) {
+  return apiRequest<AdminGradeSummary>(`/admin/grades/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(request),
+  });
+}
+
+export function deleteAdminGrade(id: number) {
+  return apiRequest<string>(`/admin/grades/${id}`, { method: "DELETE" });
 }

@@ -243,3 +243,77 @@ export interface CreateGoodsRequest {
 }
 
 export type UpdateGoodsRequest = Partial<CreateGoodsRequest>;
+
+// ---------------------------------------------------------------------------
+// 어드민 계정 / 등급 / 메뉴 권한
+// ---------------------------------------------------------------------------
+
+/** 어드민 콘솔 메뉴 키 (BottomNav 항목과 1:1) */
+export type AdminMenuKey =
+  | "DASHBOARD"
+  | "MEMBERS"
+  | "TICKETS"
+  | "ORDERS"
+  | "GOODS"
+  | "ADMINS";
+
+/** 로그인한 어드민 계정의 세션 정보 — /admin/auth/me 응답 */
+export interface AdminMeResponse {
+  userId: number;
+  name: string;
+  email: string;
+  gradeId: number | null;
+  gradeName: string | null;
+  isSuper: boolean;
+  menuKeys: AdminMenuKey[];
+}
+
+export interface AdminAccountSummary {
+  adminId: number;
+  email: string;
+  name: string;
+  gradeId: number | null;
+  gradeName: string | null;
+  isSuper: boolean;
+  status: "ACTIVE" | "BLOCKED";
+}
+
+export interface AdminAccountListResponse {
+  total: number;
+  accounts: AdminAccountSummary[];
+}
+
+export interface CreateAdminAccountRequest {
+  email: string;
+  password: string;
+  name: string;
+  gradeId: number;
+}
+
+export interface AdminMenuItem {
+  menuKey: AdminMenuKey;
+  label: string;
+  path: string;
+}
+
+export interface AdminGradeSummary {
+  gradeId: number;
+  name: string;
+  description: string | null;
+  isSuper: boolean;
+  menuKeys: AdminMenuKey[];
+  adminCount: number;
+}
+
+export interface AdminGradeListResponse {
+  grades: AdminGradeSummary[];
+  allMenus: AdminMenuItem[];
+}
+
+export interface CreateAdminGradeRequest {
+  name: string;
+  description?: string;
+  menuKeys: AdminMenuKey[];
+}
+
+export type UpdateAdminGradeRequest = Partial<CreateAdminGradeRequest>;
