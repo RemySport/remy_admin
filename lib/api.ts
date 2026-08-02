@@ -122,3 +122,29 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 
   return unwrap<T>(body);
 }
+
+const UPLOAD_TIMEOUT = 15000;
+
+/**
+ * 파일 업로드 전용 요청 헬퍼 (multipart/form-data).
+ * Content-Type 헤더를 직접 지정하면 boundary 가 빠져 서버가 파싱하지 못하므로 브라우저가 자동 설정하게 둔다.
+ */
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    cache: "no-store",
+    credentials: "include",
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT),
+    body: formData,
+  });
+
+  const body = await res.json().catch(() => null);
+
+  if (!res.ok || (isBaseResponse(body) && body.isSuccess === false)) {
+    const message =
+      (isBaseResponse(body) ? body.message : null) ?? `API ${path} 업로드 실패 (${res.status})`;
+    throw new ApiRequestError(message);
+  }
+
+  return unwrap<T>(body);
+}

@@ -1,6 +1,6 @@
 // 화면에서 호출하는 데이터 서비스.
 // 각 함수는 가상 API 로 요청 → 실패 시 mock 으로 폴백한다.
-import { apiRequest, fetchWithFallback, type ApiResult } from "./api";
+import { apiRequest, apiUpload, fetchWithFallback, type ApiResult } from "./api";
 import { mockDashboard } from "./mock/dashboard";
 import { mockMembers } from "./mock/members";
 import {
@@ -232,6 +232,13 @@ export function updateGoods(id: number, request: UpdateGoodsRequest) {
 
 export function deleteGoods(id: number) {
   return apiRequest<string>(`/admin/goods/${id}`, { method: "DELETE" });
+}
+
+/** 굿즈 이미지 첨부 업로드 — S3(goods/images/)에 저장되고 접근 URL을 반환한다. */
+export function uploadGoodsImage(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiUpload<{ url: string }>("/admin/goods/images", formData);
 }
 
 // ---------------------------------------------------------------------------

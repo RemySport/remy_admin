@@ -1,7 +1,8 @@
 "use client";
 
 import { Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { uploadGoodsImage } from "@/lib/services";
 import type { AdminGoodsDetail, GoodsOptionInput } from "@/lib/types";
 
 export interface GoodsFormValues {
@@ -25,7 +26,8 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
   const [price, setPrice] = useState(initial?.price ?? 0);
   const [stock, setStock] = useState(initial?.stock ?? 0);
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls ?? []);
-  const [imageInput, setImageInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [options, setOptions] = useState<GoodsOptionInput[]>(
     initial?.options.map((o) => ({ name: o.name, values: [...o.values] })) ?? [],
   );
@@ -36,10 +38,21 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
     "w-full rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-[#bbbbbb]";
   const labelClass = "mb-1.5 block text-xs font-bold text-muted";
 
-  const addImage = () => {
-    if (!imageInput.trim()) return;
-    setImageUrls((prev) => [...prev, imageInput.trim()]);
-    setImageInput("");
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const uploaded = await Promise.all(
+        Array.from(files).map((file) => uploadGoodsImage(file)),
+      );
+      setImageUrls((prev) => [...prev, ...uploaded.map((r) => r.url)]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const addOption = () => setOptions((prev) => [...prev, { name: "", values: [] }]);
@@ -125,33 +138,30 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
           </div>
 
           <div>
-            <label className={labelClass}>이미지 URL</label>
-            <div className="flex gap-2">
-              <input
-                value={imageInput}
-                onChange={(e) => setImageInput(e.target.value)}
-                placeholder="https://..."
-                className={`${inputClass} flex-1`}
-              />
-              <button
-                type="button"
-                onClick={addImage}
-                className="rounded-lg border border-[#dddddd] px-3 text-sm font-bold text-ink hover:border-[#bbbbbb]"
-              >
-                추가
-              </button>
-            </div>
+            <label className={labelClass}>이미지</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              onChange={(e) => handleFilesSelected(e.target.files)}
+              disabled={uploading}
+              className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-[#dddddd] file:bg-white file:px-3 file:py-2 file:text-sm file:font-bold file:text-ink hover:file:border-[#bbbbbb] disabled:opacity-60"
+            />
+            {uploading && <p className="mt-1.5 text-xs text-muted">업로드 중...</p>}
             {imageUrls.length > 0 && (
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-2 grid grid-cols-4 gap-2">
                 {imageUrls.map((url, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-muted">
-                    <span className="flex-1 truncate">{url}</span>
+                  <li key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-[#eeeeee]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="h-full w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => setImageUrls((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="text-[#bbbbbb] hover:text-[#da1d52]"
+                      aria-label="이미지 삭제"
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100 hover:bg-[#da1d52]"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={12} />
                     </button>
                   </li>
                 ))}
@@ -202,7 +212,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || uploading}
             className="w-full rounded-xl bg-[#111111] py-4 text-sm font-extrabold text-white transition hover:bg-black active:scale-[0.99] disabled:opacity-60"
           >
             {submitting ? "저장 중..." : initial ? "수정하기" : "등록하기"}
