@@ -8,32 +8,53 @@ import type {
   LeagueBrief,
   StadiumBrief,
   TeamBrief,
+  TicketDetail,
   TicketOptionInput,
 } from "@/lib/types";
 
 interface TicketFormModalProps {
+  initial?: TicketDetail;
   onSubmit: (request: CreateTicketRequest) => Promise<void>;
   onClose: () => void;
 }
 
 const EMPTY_OPTION: TicketOptionInput = { seatType: "", price: 0, currency: "KRW", maxQuantity: 4 };
 
-export default function TicketFormModal({ onSubmit, onClose }: TicketFormModalProps) {
+function toLocalDatetimeInput(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export default function TicketFormModal({ initial, onSubmit, onClose }: TicketFormModalProps) {
+  const isEdit = initial != null;
   const [leagues, setLeagues] = useState<LeagueBrief[]>([]);
   const [teams, setTeams] = useState<TeamBrief[]>([]);
   const [stadiums, setStadiums] = useState<StadiumBrief[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [competitionType, setCompetitionType] = useState("LEAGUE");
-  const [leagueId, setLeagueId] = useState<string>("");
-  const [homeTeamId, setHomeTeamId] = useState<string>("");
-  const [awayTeamId, setAwayTeamId] = useState<string>("");
-  const [stadiumId, setStadiumId] = useState<string>("");
-  const [matchDatetime, setMatchDatetime] = useState("");
-  const [reservationStatus, setReservationStatus] = useState("OPEN");
-  const [isReservable, setIsReservable] = useState(true);
-  const [options, setOptions] = useState<TicketOptionInput[]>([{ ...EMPTY_OPTION }]);
+  const [competitionType, setCompetitionType] = useState(initial?.competitionType ?? "LEAGUE");
+  const [leagueId, setLeagueId] = useState<string>(initial?.leagueId ? String(initial.leagueId) : "");
+  const [homeTeamId, setHomeTeamId] = useState<string>(initial?.homeTeamId ? String(initial.homeTeamId) : "");
+  const [awayTeamId, setAwayTeamId] = useState<string>(initial?.awayTeamId ? String(initial.awayTeamId) : "");
+  const [stadiumId, setStadiumId] = useState<string>(initial?.stadiumId ? String(initial.stadiumId) : "");
+  const [matchDatetime, setMatchDatetime] = useState(
+    initial ? toLocalDatetimeInput(initial.matchDatetime) : "",
+  );
+  const [reservationStatus, setReservationStatus] = useState(initial?.reservationStatus ?? "OPEN");
+  const [isReservable, setIsReservable] = useState(initial?.isReservable ?? true);
+  const [options, setOptions] = useState<TicketOptionInput[]>(
+    initial && initial.ticketOptions.length > 0
+      ? initial.ticketOptions.map((o) => ({
+          seatType: o.seatType,
+          price: o.price,
+          currency: o.currency,
+          maxQuantity: o.maxQuantity,
+        }))
+      : [{ ...EMPTY_OPTION }],
+  );
 
   useEffect(() => {
     Promise.all([getLeagues(), getTeams(), getTicketStadiums()]).then(
@@ -94,7 +115,7 @@ export default function TicketFormModal({ onSubmit, onClose }: TicketFormModalPr
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-5">
-          <h3 className="text-base font-extrabold text-ink">티켓 등록</h3>
+          <h3 className="text-base font-extrabold text-ink">{isEdit ? "티켓 수정" : "티켓 등록"}</h3>
           <button onClick={onClose} aria-label="닫기" className="text-ink hover:text-brand-strong">
             <X size={20} />
           </button>
@@ -242,7 +263,7 @@ export default function TicketFormModal({ onSubmit, onClose }: TicketFormModalPr
             disabled={submitting}
             className="w-full rounded-xl bg-[#111111] py-4 text-sm font-extrabold text-white transition hover:bg-black active:scale-[0.99] disabled:opacity-60"
           >
-            {submitting ? "등록 중..." : "등록하기"}
+            {submitting ? "저장 중..." : isEdit ? "수정하기" : "등록하기"}
           </button>
         </form>
       </div>

@@ -12,10 +12,12 @@ import { STATUS_FILTERS } from "@/lib/mock/tickets";
 import {
   createTicket,
   deleteTicket,
+  getTicket,
   getTickets,
+  updateTicket,
   updateTicketStatus,
 } from "@/lib/services";
-import type { CreateTicketRequest, TicketSummary } from "@/lib/types";
+import type { CreateTicketRequest, TicketDetail, TicketSummary } from "@/lib/types";
 
 export default function ProductsPage() {
   const { name } = useAdminSession();
@@ -26,6 +28,7 @@ export default function ProductsPage() {
   const [status, setStatus] = useState("전체");
   const [keyword, setKeyword] = useState("");
   const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<TicketDetail | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -52,6 +55,18 @@ export default function ProductsPage() {
   const handleCreate = async (request: CreateTicketRequest) => {
     await createTicket(request);
     setFormOpen(false);
+    load();
+  };
+
+  const handleEdit = async (id: number) => {
+    const res = await getTicket(id);
+    setEditing(res.data);
+  };
+
+  const handleUpdate = async (request: CreateTicketRequest) => {
+    if (!editing) return;
+    await updateTicket(editing.ticketId, request);
+    setEditing(null);
     load();
   };
 
@@ -99,6 +114,7 @@ export default function ProductsPage() {
               <TicketCard
                 key={t.ticketId}
                 ticket={t}
+                onEdit={handleEdit}
                 onChangeStatus={handleChangeStatus}
                 onDelete={handleDelete}
               />
@@ -108,6 +124,13 @@ export default function ProductsPage() {
       </main>
 
       {formOpen && <TicketFormModal onSubmit={handleCreate} onClose={() => setFormOpen(false)} />}
+      {editing && (
+        <TicketFormModal
+          initial={editing}
+          onSubmit={handleUpdate}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </>
   );
 }

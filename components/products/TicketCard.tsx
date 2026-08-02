@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TicketSummary } from "@/lib/types";
 import RadioModal from "@/components/members/RadioModal";
 
-const MENU_ITEMS = ["판매상태변경", "삭제"] as const;
+const MENU_ITEMS = ["수정", "판매상태변경", "삭제"] as const;
 
 const STATUS_OPTIONS: { value: "OPEN" | "PENDING" | "CLOSED"; desc: string }[] = [
   { value: "OPEN", desc: "예매를 받을 수 있는 상태" },
@@ -26,10 +26,12 @@ function formatDate(iso: string) {
 
 export default function TicketCard({
   ticket,
+  onEdit,
   onChangeStatus,
   onDelete,
 }: {
   ticket: TicketSummary;
+  onEdit: (id: number) => void;
   onChangeStatus: (id: number, status: "OPEN" | "PENDING" | "CLOSED") => void;
   onDelete: (id: number) => void;
 }) {
@@ -50,7 +52,8 @@ export default function TicketCard({
 
   const onMenuSelect = (item: (typeof MENU_ITEMS)[number]) => {
     setMenuOpen(false);
-    if (item === "판매상태변경") setStatusModalOpen(true);
+    if (item === "수정") onEdit(ticket.ticketId);
+    else if (item === "판매상태변경") setStatusModalOpen(true);
     else if (item === "삭제") {
       if (confirm(`"${ticket.title}" 티켓을 삭제하시겠습니까?`)) {
         onDelete(ticket.ticketId);
