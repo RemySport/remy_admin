@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import MockBanner from "@/components/MockBanner";
 import GoodsCard from "@/components/goods/GoodsCard";
 import GoodsFormModal, { type GoodsFormValues } from "@/components/goods/GoodsFormModal";
+import { useAdminSession } from "@/lib/admin-session";
 import {
   createGoods,
   deleteGoods,
@@ -16,6 +17,7 @@ import {
 import type { AdminGoodsDetail, AdminGoodsSummary } from "@/lib/types";
 
 export default function GoodsPage() {
+  const { name } = useAdminSession();
   const [goodsList, setGoodsList] = useState<AdminGoodsSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [fromMock, setFromMock] = useState(false);
@@ -61,7 +63,7 @@ export default function GoodsPage() {
 
   return (
     <>
-      <Header title="굿즈관리" userName="홍길동" />
+      <Header title="굿즈관리" userName={name || "관리자"} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
         {fromMock && <MockBanner />}

@@ -6,10 +6,12 @@ import MockBanner from "@/components/MockBanner";
 import OrderChart from "@/components/dashboard/OrderChart";
 import PlaceholderCard from "@/components/dashboard/PlaceholderCard";
 import StatNumberCard from "@/components/dashboard/StatNumberCard";
+import { useAdminSession } from "@/lib/admin-session";
 import { getDashboard } from "@/lib/services";
 import type { DashboardData } from "@/lib/types";
 
 export default function DashboardPage() {
+  const { name } = useAdminSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [fromMock, setFromMock] = useState(false);
 
@@ -27,7 +29,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header title="레미 어드민" userName="홍길동" />
+      <Header title="레미 어드민" userName={name || "관리자"} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
         {fromMock && <MockBanner />}

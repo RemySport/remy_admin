@@ -7,6 +7,7 @@ import MockBanner from "@/components/MockBanner";
 import SelectBox from "@/components/members/SelectBox";
 import TicketCard from "@/components/products/TicketCard";
 import TicketFormModal from "@/components/products/TicketFormModal";
+import { useAdminSession } from "@/lib/admin-session";
 import { STATUS_FILTERS } from "@/lib/mock/tickets";
 import {
   createTicket,
@@ -17,6 +18,7 @@ import {
 import type { CreateTicketRequest, TicketSummary } from "@/lib/types";
 
 export default function ProductsPage() {
+  const { name } = useAdminSession();
   const [tickets, setTickets] = useState<TicketSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [fromMock, setFromMock] = useState(false);
@@ -55,7 +57,7 @@ export default function ProductsPage() {
 
   return (
     <>
-      <Header title="티켓관리" userName="홍길동" />
+      <Header title="티켓관리" userName={name || "관리자"} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
         {fromMock && <MockBanner />}

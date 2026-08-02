@@ -19,7 +19,7 @@ import type { AdminGradeSummary, AdminMenuItem } from "@/lib/types";
 
 export default function AdminGradesPage() {
   const router = useRouter();
-  const { isSuper, loading: sessionLoading } = useAdminSession();
+  const { name, isSuper, loading: sessionLoading } = useAdminSession();
 
   const [grades, setGrades] = useState<AdminGradeSummary[]>([]);
   const [allMenus, setAllMenus] = useState<AdminMenuItem[]>([]);
@@ -76,7 +76,7 @@ export default function AdminGradesPage() {
     <>
       <Header
         title="어드민관리"
-        userName="관리자"
+        userName={name || "관리자"}
         menuItems={[
           { label: "계정 관리", href: "/dashboard/admins" },
           { label: "등급 관리", href: "/dashboard/admins/grades" },

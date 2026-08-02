@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import MockBanner from "@/components/MockBanner";
 import MemberCard from "@/components/members/MemberCard";
 import SelectBox from "@/components/members/SelectBox";
+import { useAdminSession } from "@/lib/admin-session";
 import {
   GROUP_FILTERS,
   STATUS_FILTERS,
@@ -20,6 +21,7 @@ function matchGroup(filter: string, group: string) {
 }
 
 export default function MembersPage() {
+  const { name } = useAdminSession();
   const [members, setMembers] = useState<Member[]>([]);
   const [total, setTotal] = useState(0);
   const [fromMock, setFromMock] = useState(false);
@@ -62,7 +64,7 @@ export default function MembersPage() {
     <>
       <Header
         title="회원관리"
-        userName="홍길동"
+        userName={name || "관리자"}
         menuItems={[
           { label: "회원그룹 관리", href: "/dashboard/members/groups" },
           { label: "후기목록", href: "/dashboard/members/reviews" },

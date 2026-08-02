@@ -20,7 +20,7 @@ import type { AdminAccountSummary, AdminGradeSummary } from "@/lib/types";
 
 export default function AdminAccountsPage() {
   const router = useRouter();
-  const { isSuper, loading: sessionLoading } = useAdminSession();
+  const { name, isSuper, loading: sessionLoading } = useAdminSession();
 
   const [accounts, setAccounts] = useState<AdminAccountSummary[]>([]);
   const [grades, setGrades] = useState<AdminGradeSummary[]>([]);
@@ -70,7 +70,7 @@ export default function AdminAccountsPage() {
     <>
       <Header
         title="어드민관리"
-        userName="관리자"
+        userName={name || "관리자"}
         menuItems={[
           { label: "계정 관리", href: "/dashboard/admins" },
           { label: "등급 관리", href: "/dashboard/admins/grades" },

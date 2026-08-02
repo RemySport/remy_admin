@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import MockBanner from "@/components/MockBanner";
 import SelectBox from "@/components/members/SelectBox";
 import CancelOrderModal from "@/components/orders/CancelOrderModal";
+import { useAdminSession } from "@/lib/admin-session";
 import { ORDER_STATUS_FILTERS } from "@/lib/mock/orders";
 import { cancelOrder, getOrders } from "@/lib/services";
 import type { OrderSummary } from "@/lib/types";
@@ -31,6 +32,7 @@ function formatDate(iso: string | null) {
 }
 
 export default function OrdersPage() {
+  const { name } = useAdminSession();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [fromMock, setFromMock] = useState(false);
@@ -60,7 +62,7 @@ export default function OrdersPage() {
 
   return (
     <>
-      <Header title="구매관리" userName="홍길동" />
+      <Header title="구매관리" userName={name || "관리자"} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
         {fromMock && <MockBanner />}
