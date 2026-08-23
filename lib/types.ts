@@ -218,6 +218,13 @@ export interface AdminGoodsOption {
   values: string[];
 }
 
+export interface AdminGoodsVariant {
+  variantId: number | null;
+  /** goods.options 배열 순서에 대응하는 값 조합 (예: ["M"], ["M", "블랙"]) */
+  optionValues: string[];
+  stock: number;
+}
+
 export interface AdminGoodsDetail {
   goodsId: number;
   name: string;
@@ -226,11 +233,17 @@ export interface AdminGoodsDetail {
   stock: number;
   imageUrls: string[];
   options: AdminGoodsOption[];
+  variants: AdminGoodsVariant[];
 }
 
 export interface GoodsOptionInput {
   name: string;
   values: string[];
+}
+
+export interface GoodsVariantInput {
+  optionValues: string[];
+  stock: number;
 }
 
 export interface CreateGoodsRequest {
@@ -240,6 +253,7 @@ export interface CreateGoodsRequest {
   stock?: number;
   imageUrls?: string[];
   options?: GoodsOptionInput[];
+  variants?: GoodsVariantInput[];
 }
 
 export type UpdateGoodsRequest = Partial<CreateGoodsRequest>;

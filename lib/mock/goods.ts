@@ -32,4 +32,9 @@ export const mockGoodsDetail: AdminGoodsDetail = {
     "https://image.domain.com/goods_501_detail.png",
   ],
   options: [{ optionId: 1, name: "사이즈", values: ["M", "L", "XL"] }],
+  variants: [
+    { variantId: 1, optionValues: ["M"], stock: 40 },
+    { variantId: 2, optionValues: ["L"], stock: 40 },
+    { variantId: 3, optionValues: ["XL"], stock: 40 },
+  ],
 };

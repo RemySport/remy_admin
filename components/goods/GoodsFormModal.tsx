@@ -1,9 +1,9 @@
 "use client";
 
 import { Plus, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { uploadGoodsImage } from "@/lib/services";
-import type { AdminGoodsDetail, GoodsOptionInput } from "@/lib/types";
+import type { AdminGoodsDetail, GoodsOptionInput, GoodsVariantInput } from "@/lib/types";
 
 export interface GoodsFormValues {
   name: string;
@@ -12,6 +12,19 @@ export interface GoodsFormValues {
   stock: number;
   imageUrls: string[];
   options: GoodsOptionInput[];
+  variants?: GoodsVariantInput[];
+}
+
+/** 옵션 값 조합(예: ["M"], ["M", "블랙"])을 재고 맵의 키로 바꾼다. */
+const comboKey = (combo: string[]) => combo.join("␟");
+
+/** 현재 옵션들의 값으로 만들 수 있는 모든 조합(카티전곱). 값이 비어있는 옵션이 하나라도 있으면 조합이 없다. */
+function buildCombos(options: GoodsOptionInput[]): string[][] {
+  if (options.length === 0 || options.some((o) => o.values.length === 0)) return [];
+  return options.reduce<string[][]>(
+    (combos, option) => combos.flatMap((prefix) => option.values.map((v) => [...prefix, v])),
+    [[]],
+  );
 }
 
 interface GoodsFormModalProps {
@@ -31,8 +44,23 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
   const [options, setOptions] = useState<GoodsOptionInput[]>(
     initial?.options.map((o) => ({ name: o.name, values: [...o.values] })) ?? [],
   );
+  const [variantStocks, setVariantStocks] = useState<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    initial?.variants.forEach((v) => {
+      map[comboKey(v.optionValues)] = v.stock;
+    });
+    return map;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hasOptions = options.length > 0;
+  const combos = useMemo(() => buildCombos(options), [options]);
+  const totalVariantStock = combos.reduce((sum, c) => sum + (variantStocks[comboKey(c)] ?? 0), 0);
+
+  const updateVariantStock = (combo: string[], value: number) => {
+    setVariantStocks((prev) => ({ ...prev, [comboKey(combo)]: value }));
+  };
 
   const inputClass =
     "rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-[#bbbbbb]";
@@ -76,9 +104,24 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
       setError("상품명과 가격을 확인해주세요.");
       return;
     }
+    if (hasOptions && combos.length === 0) {
+      setError("옵션 값을 입력해주세요.");
+      return;
+    }
+    const variants = hasOptions
+      ? combos.map((combo) => ({ optionValues: combo, stock: variantStocks[comboKey(combo)] ?? 0 }))
+      : undefined;
     setSubmitting(true);
     try {
-      await onSubmit({ name, description, price, stock, imageUrls, options });
+      await onSubmit({
+        name,
+        description,
+        price,
+        stock: hasOptions ? totalVariantStock : stock,
+        imageUrls,
+        options,
+        variants,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "저장에 실패했습니다.");
     } finally {
@@ -116,7 +159,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
               className={`${inputClass} w-full`}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className={hasOptions ? "" : "grid grid-cols-2 gap-3"}>
             <div>
               <label className={labelClass}>가격</label>
               <input
@@ -126,15 +169,17 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
                 className={`${inputClass} w-full`}
               />
             </div>
-            <div>
-              <label className={labelClass}>재고</label>
-              <input
-                type="number"
-                value={stock}
-                onChange={(e) => setStock(Number(e.target.value))}
-                className={`${inputClass} w-full`}
-              />
-            </div>
+            {!hasOptions && (
+              <div>
+                <label className={labelClass}>재고</label>
+                <input
+                  type="number"
+                  value={stock}
+                  onChange={(e) => setStock(Number(e.target.value))}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -207,6 +252,40 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
               ))}
             </div>
           </div>
+
+          {hasOptions && (
+            <div>
+              <label className={labelClass}>옵션별 재고</label>
+              {combos.length === 0 ? (
+                <p className="text-xs text-muted">옵션 값을 입력하면 조합별로 재고를 입력할 수 있어요.</p>
+              ) : (
+                <div className="space-y-2">
+                  {combos.map((combo) => {
+                    const key = comboKey(combo);
+                    const label = combo
+                      .map((value, i) => `${options[i]?.name || "옵션"}: ${value}`)
+                      .join(" / ");
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-[#eeeeee] px-3.5 py-2.5"
+                      >
+                        <span className="text-sm text-ink">{label}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={variantStocks[key] ?? 0}
+                          onChange={(e) => updateVariantStock(combo, Number(e.target.value))}
+                          className={`${inputClass} w-24 text-right`}
+                        />
+                      </div>
+                    );
+                  })}
+                  <p className="text-right text-xs text-muted">합계 재고 {totalVariantStock}개</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm text-[#da1d52]">{error}</p>}
 
