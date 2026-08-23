@@ -99,6 +99,7 @@ export function updateMemberStatus(id: number, status: MemberStatus) {
 export interface TicketQuery {
   keyword?: string;
   status?: string;
+  leagueId?: number;
   page?: number;
   size?: number;
 }
@@ -107,6 +108,7 @@ export function getTickets(query: TicketQuery = {}): Promise<ApiResult<TicketLis
   const params = new URLSearchParams();
   if (query.keyword) params.set("keyword", query.keyword);
   if (query.status && query.status !== "전체") params.set("status", query.status);
+  if (query.leagueId) params.set("leagueId", String(query.leagueId));
   params.set("page", String(query.page ?? 1));
   params.set("size", String(query.size ?? 20));
   return fetchWithFallback(`/admin/tickets?${params.toString()}`, mockTickets);

@@ -4,6 +4,7 @@ import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import MockBanner from "@/components/MockBanner";
+import Pagination from "@/components/Pagination";
 import SelectBox from "@/components/members/SelectBox";
 import TicketCard from "@/components/products/TicketCard";
 import TicketFormModal from "@/components/products/TicketFormModal";
@@ -12,35 +13,64 @@ import { STATUS_FILTERS } from "@/lib/mock/tickets";
 import {
   createTicket,
   deleteTicket,
+  getLeagues,
   getTicket,
   getTickets,
   updateTicket,
   updateTicketStatus,
 } from "@/lib/services";
-import type { CreateTicketRequest, TicketDetail, TicketSummary } from "@/lib/types";
+import type { CreateTicketRequest, LeagueBrief, TicketDetail, TicketSummary } from "@/lib/types";
+
+const PAGE_SIZE = 20;
+const ALL_LEAGUES = "전체";
 
 export default function ProductsPage() {
   const { name } = useAdminSession();
   const [tickets, setTickets] = useState<TicketSummary[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [fromMock, setFromMock] = useState(false);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("전체");
   const [keyword, setKeyword] = useState("");
+  const [leagues, setLeagues] = useState<LeagueBrief[]>([]);
+  const [leagueName, setLeagueName] = useState(ALL_LEAGUES);
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TicketDetail | null>(null);
 
+  useEffect(() => {
+    getLeagues().then((res) => setLeagues(res.data));
+  }, []);
+
+  const leagueId = leagues.find((l) => l.name === leagueName)?.leagueId;
+
+  // 상태/리그/검색어를 바꾸면 1페이지부터 다시 본다.
+  const handleStatusChange = (v: string) => {
+    setStatus(v);
+    setPage(1);
+  };
+  const handleLeagueChange = (v: string) => {
+    setLeagueName(v);
+    setPage(1);
+  };
+  const handleKeywordChange = (v: string) => {
+    setKeyword(v);
+    setPage(1);
+  };
+
   const load = () => {
     setLoading(true);
-    getTickets({ status, keyword }).then((res) => {
+    getTickets({ status, keyword, leagueId, page, size: PAGE_SIZE }).then((res) => {
       setTickets(res.data.tickets);
       setTotal(res.data.totalElements);
+      setTotalPages(res.data.totalPages);
       setFromMock(res.fromMock);
       setLoading(false);
     });
   };
 
-  useEffect(load, [status, keyword]);
+  useEffect(load, [status, keyword, leagueId, page]);
 
   const handleChangeStatus = async (id: number, reservationStatus: "OPEN" | "PENDING" | "CLOSED") => {
     await updateTicketStatus(id, { reservationStatus, isReservable: reservationStatus === "OPEN" });
@@ -83,11 +113,17 @@ export default function ProductsPage() {
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <SelectBox value={status} hint="상태선택" options={STATUS_FILTERS} onChange={setStatus} />
+            <SelectBox value={status} hint="상태선택" options={STATUS_FILTERS} onChange={handleStatusChange} />
+            <SelectBox
+              value={leagueName}
+              hint="리그선택"
+              options={[ALL_LEAGUES, ...leagues.map((l) => l.name)]}
+              onChange={handleLeagueChange}
+            />
             <div className="flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5">
               <input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => handleKeywordChange(e.target.value)}
                 placeholder="팀 / 경기장 검색"
                 className="w-40 bg-transparent text-sm text-ink outline-none placeholder:text-[#bbbbbb]"
               />
@@ -121,6 +157,8 @@ export default function ProductsPage() {
             ))}
           </div>
         )}
+
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </main>
 
       {formOpen && <TicketFormModal onSubmit={handleCreate} onClose={() => setFormOpen(false)} />}
