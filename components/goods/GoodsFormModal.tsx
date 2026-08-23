@@ -35,7 +35,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
   const [error, setError] = useState<string | null>(null);
 
   const inputClass =
-    "w-full rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-[#bbbbbb]";
+    "rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-[#bbbbbb]";
   const labelClass = "mb-1.5 block text-xs font-bold text-muted";
 
   const handleFilesSelected = async (files: FileList | null) => {
@@ -105,7 +105,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
         <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6">
           <div>
             <label className={labelClass}>상품명</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+            <input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} w-full`} />
           </div>
           <div>
             <label className={labelClass}>상세 설명</label>
@@ -113,7 +113,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className={inputClass}
+              className={`${inputClass} w-full`}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -123,7 +123,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
-                className={inputClass}
+                className={`${inputClass} w-full`}
               />
             </div>
             <div>
@@ -132,7 +132,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
                 type="number"
                 value={stock}
                 onChange={(e) => setStock(Number(e.target.value))}
-                className={inputClass}
+                className={`${inputClass} w-full`}
               />
             </div>
           </div>
