@@ -162,6 +162,8 @@ export interface TeamBrief {
 
 export interface OrderSummary {
   orderId: number;
+  paymentOrderId: string | null;
+  paymentStatus: string | null;
   buyerName: string;
   buyerEmail: string;
   ticketTitle: string;
@@ -170,6 +172,16 @@ export interface OrderSummary {
   totalPrice: number;
   status: string;
   reservedAt: string | null;
+}
+
+export type RefundReason = "LEGAL_REFUND" | "MATCH_CANCELLED" | "SUPPLY_FAILED";
+
+export interface PaymentOperationResponse {
+  orderId: string;
+  status: string;
+  paidAmount: number | null;
+  approvedAt: string | null;
+  reservationStatus: string;
 }
 
 export interface OrderListResponse {

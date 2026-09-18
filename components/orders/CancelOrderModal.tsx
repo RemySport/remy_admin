@@ -2,17 +2,26 @@
 
 import { X } from "lucide-react";
 import { useState } from "react";
+import type { RefundReason } from "@/lib/types";
+
+const REFUND_REASONS: { value: RefundReason; label: string }[] = [
+  { value: "LEGAL_REFUND", label: "고객 요청에 의한 전액 환불" },
+  { value: "MATCH_CANCELLED", label: "경기 취소에 의한 전액 환불" },
+  { value: "SUPPLY_FAILED", label: "티켓 확보 실패에 의한 전액 환불" },
+];
 
 export default function CancelOrderModal({
   orderId,
+  paymentOrderId,
   onConfirm,
   onClose,
 }: {
   orderId: number;
-  onConfirm: (reason: string) => Promise<void>;
+  paymentOrderId: string;
+  onConfirm: (reason: RefundReason) => Promise<void>;
   onClose: () => void;
 }) {
-  const [reason, setReason] = useState("");
+  const [reason, setReason] = useState<RefundReason>("LEGAL_REFUND");
   const [submitting, setSubmitting] = useState(false);
 
   const handleConfirm = async () => {
@@ -41,15 +50,25 @@ export default function CancelOrderModal({
         </div>
         <div className="px-6 pb-2">
           <p className="mb-3 text-sm text-muted">
-            주문번호 <span className="font-bold text-ink">{orderId}</span> 건을 취소 처리합니다.
+            예약번호 <span className="font-bold text-ink">{orderId}</span>의 카드 결제 전액을 환불합니다.
           </p>
-          <textarea
+          <p className="mb-3 break-all text-xs text-muted">결제 주문번호: {paymentOrderId}</p>
+          <label htmlFor="refund-reason" className="mb-2 block text-xs font-bold text-ink">
+            환불 사유
+          </label>
+          <select
+            id="refund-reason"
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="취소 사유 (선택)"
-            rows={3}
+            onChange={(e) => setReason(e.target.value as RefundReason)}
             className="w-full rounded-lg border border-[#dddddd] px-3.5 py-2.5 text-sm text-ink outline-none focus:border-[#bbbbbb]"
-          />
+          >
+            {REFUND_REASONS.map((item) => (
+              <option key={item.value} value={item.value}>{item.label}</option>
+            ))}
+          </select>
+          <p className="mt-3 text-xs leading-5 text-[#a31545]">
+            페이플 승인 취소가 확인된 뒤 예약 상태와 재고가 함께 변경됩니다.
+          </p>
         </div>
         <div className="px-6 pb-6 pt-4">
           <button
