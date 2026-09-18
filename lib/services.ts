@@ -36,6 +36,8 @@ import type {
   MemberStatus,
   OrderDetail,
   OrderListResponse,
+  PaymentOperationResponse,
+  RefundReason,
   StadiumBrief,
   TeamBrief,
   TicketDetail,
@@ -182,16 +184,20 @@ export function getOrders(query: OrderQuery = {}): Promise<ApiResult<OrderListRe
   if (query.to) params.set("to", query.to);
   params.set("page", String(query.page ?? 1));
   params.set("size", String(query.size ?? 20));
-  return fetchWithFallback(`/admin/orders?${params.toString()}`, mockOrders);
+  const path = `/admin/orders?${params.toString()}`;
+  if (process.env.NODE_ENV === "production") {
+    return apiRequest<OrderListResponse>(path).then((data) => ({ data, fromMock: false }));
+  }
+  return fetchWithFallback(path, mockOrders);
 }
 
 export function getOrder(id: number): Promise<ApiResult<OrderDetail>> {
   return fetchWithFallback(`/admin/orders/${id}`, mockOrderDetail);
 }
 
-export function cancelOrder(id: number, reason?: string) {
-  return apiRequest(`/admin/orders/${id}/cancel`, {
-    method: "PATCH",
+export function refundPayment(orderId: string, reason: RefundReason) {
+  return apiRequest<PaymentOperationResponse>(`/admin/payments/${encodeURIComponent(orderId)}/refund`, {
+    method: "POST",
     body: JSON.stringify({ reason }),
   });
 }

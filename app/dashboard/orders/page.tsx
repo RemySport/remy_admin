@@ -8,8 +8,9 @@ import SelectBox from "@/components/members/SelectBox";
 import CancelOrderModal from "@/components/orders/CancelOrderModal";
 import { useAdminSession } from "@/lib/admin-session";
 import { ORDER_STATUS_FILTERS } from "@/lib/mock/orders";
-import { cancelOrder, getOrders } from "@/lib/services";
-import type { OrderSummary } from "@/lib/types";
+import { getOrders, refundPayment } from "@/lib/services";
+import { ApiRequestError } from "@/lib/api";
+import type { OrderSummary, RefundReason } from "@/lib/types";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "대기",
@@ -39,35 +40,54 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("전체");
   const [keyword, setKeyword] = useState("");
-  const [cancelTarget, setCancelTarget] = useState<number | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<OrderSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = () => {
-    getOrders({ status, keyword }).then((res) => {
-      setOrders(res.data.orders);
-      setTotal(res.data.totalElements);
-      setFromMock(res.fromMock);
-      setLoading(false);
-    });
+    getOrders({ status, keyword })
+      .then((res) => {
+        setOrders(res.data.orders);
+        setTotal(res.data.totalElements);
+        setFromMock(res.fromMock);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "구매 내역을 불러오지 못했습니다."))
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [status, keyword]);
 
   const handleStatusChange = (value: string) => {
     setLoading(true);
+    setError(null);
     setStatus(value);
   };
 
   const handleKeywordChange = (value: string) => {
     setLoading(true);
+    setError(null);
     setKeyword(value);
   };
 
-  const handleCancel = async (reason: string) => {
+  const handleCancel = async (reason: RefundReason) => {
     if (cancelTarget == null) return;
-    await cancelOrder(cancelTarget, reason);
-    setCancelTarget(null);
-    setLoading(true);
-    load();
+    setError(null);
+    try {
+      const result=await refundPayment(cancelTarget.paymentOrderId!, reason);
+      setCancelTarget(null);
+      if (result.status === "CANCEL_IN_DOUBT" || result.status === "CANCELLING") {
+        setOrders((current) => current.map((order) => order.orderId === cancelTarget.orderId
+          ? { ...order, paymentStatus: result.status }
+          : order));
+        setError("환불 요청 결과를 확인 중입니다. 다시 취소하지 말고 결제 검토 상태를 확인해 주세요.");
+        return;
+      }
+      setLoading(true);
+      load();
+    } catch (e) {
+      setCancelTarget(null);
+      const detail=e instanceof ApiRequestError ? ` (${e.message})` : "";
+      setError(`환불 요청 결과를 확인할 수 없습니다. 다시 취소하지 말고 결제 상태를 먼저 확인해 주세요.${detail}`);
+    }
   };
 
   return (
@@ -76,6 +96,7 @@ export default function OrdersPage() {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-32 pt-6">
         {fromMock && <MockBanner />}
+        {error && <p role="alert" className="mb-4 rounded-xl bg-[#da1d52]/10 px-4 py-3 text-sm text-[#a31545]">{error}</p>}
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-ink">
@@ -155,11 +176,12 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 text-ink">{formatDate(o.reservedAt)}</td>
                     <td className="px-4 py-3">
                       <button
-                        disabled={o.status === "CANCELLED"}
-                        onClick={() => setCancelTarget(o.orderId)}
+                        disabled={o.status !== "PAID" || o.paymentStatus !== "PAID" || !o.paymentOrderId}
+                        onClick={() => setCancelTarget(o)}
                         className="rounded-lg border border-[#dddddd] px-3 py-1.5 text-xs font-bold text-ink transition hover:border-[#bbbbbb] disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        취소처리
+                        {o.paymentStatus === "CANCELLING" || o.paymentStatus === "CANCEL_IN_DOUBT"
+                          ? "환불 확인 중" : "취소처리"}
                       </button>
                     </td>
                   </tr>
@@ -172,7 +194,8 @@ export default function OrdersPage() {
 
       {cancelTarget != null && (
         <CancelOrderModal
-          orderId={cancelTarget}
+          orderId={cancelTarget.orderId}
+          paymentOrderId={cancelTarget.paymentOrderId!}
           onConfirm={handleCancel}
           onClose={() => setCancelTarget(null)}
         />
