@@ -27,7 +27,6 @@ export default function GoodsPage() {
   const [editTarget, setEditTarget] = useState<AdminGoodsDetail | null>(null);
 
   const load = () => {
-    setLoading(true);
     getGoodsList({ keyword }).then((res) => {
       setGoodsList(res.data.goodsList);
       setTotal(res.data.totalElements);
@@ -38,9 +37,15 @@ export default function GoodsPage() {
 
   useEffect(load, [keyword]);
 
+  const handleKeywordChange = (value: string) => {
+    setLoading(true);
+    setKeyword(value);
+  };
+
   const handleCreate = async (values: GoodsFormValues) => {
     await createGoods(values);
     setFormOpen(false);
+    setLoading(true);
     load();
   };
 
@@ -48,6 +53,7 @@ export default function GoodsPage() {
     if (!editTarget) return;
     await updateGoods(editTarget.goodsId, values);
     setEditTarget(null);
+    setLoading(true);
     load();
   };
 
@@ -58,6 +64,7 @@ export default function GoodsPage() {
 
   const handleDelete = async (id: number) => {
     await deleteGoods(id);
+    setLoading(true);
     load();
   };
 
@@ -77,7 +84,7 @@ export default function GoodsPage() {
             <div className="flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5">
               <input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => handleKeywordChange(e.target.value)}
                 placeholder="상품명 검색"
                 className="w-40 bg-transparent text-sm text-ink outline-none placeholder:text-[#bbbbbb]"
               />

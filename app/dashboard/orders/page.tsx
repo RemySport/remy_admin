@@ -42,7 +42,6 @@ export default function OrdersPage() {
   const [cancelTarget, setCancelTarget] = useState<number | null>(null);
 
   const load = () => {
-    setLoading(true);
     getOrders({ status, keyword }).then((res) => {
       setOrders(res.data.orders);
       setTotal(res.data.totalElements);
@@ -53,10 +52,21 @@ export default function OrdersPage() {
 
   useEffect(load, [status, keyword]);
 
+  const handleStatusChange = (value: string) => {
+    setLoading(true);
+    setStatus(value);
+  };
+
+  const handleKeywordChange = (value: string) => {
+    setLoading(true);
+    setKeyword(value);
+  };
+
   const handleCancel = async (reason: string) => {
     if (cancelTarget == null) return;
     await cancelOrder(cancelTarget, reason);
     setCancelTarget(null);
+    setLoading(true);
     load();
   };
 
@@ -77,12 +87,12 @@ export default function OrdersPage() {
               value={status}
               hint="상태선택"
               options={ORDER_STATUS_FILTERS}
-              onChange={setStatus}
+              onChange={handleStatusChange}
             />
             <div className="flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5">
               <input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => handleKeywordChange(e.target.value)}
                 placeholder="구매자명 / 이메일 검색"
                 className="w-40 bg-transparent text-sm text-ink outline-none placeholder:text-[#bbbbbb]"
               />

@@ -30,7 +30,6 @@ export default function AdminGradesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
-    setLoading(true);
     getAdminGrades().then((res) => {
       setGrades(res.data.grades);
       setAllMenus(res.data.allMenus);
@@ -50,6 +49,7 @@ export default function AdminGradesPage() {
   const handleCreate = async (values: AdminGradeFormValues) => {
     await createAdminGrade(values);
     setFormOpen(false);
+    setLoading(true);
     load();
   };
 
@@ -57,6 +57,7 @@ export default function AdminGradesPage() {
     if (!editTarget) return;
     await updateAdminGrade(editTarget.gradeId, values);
     setEditTarget(null);
+    setLoading(true);
     load();
   };
 
@@ -64,6 +65,7 @@ export default function AdminGradesPage() {
     setError(null);
     try {
       await deleteAdminGrade(grade.gradeId);
+      setLoading(true);
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "삭제에 실패했습니다.");

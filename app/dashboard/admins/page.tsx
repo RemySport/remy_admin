@@ -29,7 +29,6 @@ export default function AdminAccountsPage() {
   const [formOpen, setFormOpen] = useState(false);
 
   const load = () => {
-    setLoading(true);
     Promise.all([getAdminAccounts(), getAdminGrades()]).then(([accountsRes, gradesRes]) => {
       setAccounts(accountsRes.data.accounts);
       setGrades(gradesRes.data.grades);
@@ -50,17 +49,20 @@ export default function AdminAccountsPage() {
   const handleCreate = async (values: AdminAccountFormValues) => {
     await createAdminAccount(values);
     setFormOpen(false);
+    setLoading(true);
     load();
   };
 
   const handleGradeChange = async (adminId: number, gradeId: number) => {
     await updateAdminAccountGrade(adminId, gradeId);
+    setLoading(true);
     load();
   };
 
   const handleStatusToggle = async (account: AdminAccountSummary) => {
     const next = account.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
     await updateAdminAccountStatus(account.adminId, next);
+    setLoading(true);
     load();
   };
 
