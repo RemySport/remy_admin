@@ -132,6 +132,7 @@ export default function OrdersPage() {
                 <th className="px-4 py-3 font-bold">좌석</th>
                 <th className="px-4 py-3 font-bold">수량</th>
                 <th className="px-4 py-3 font-bold">금액</th>
+                <th className="px-4 py-3 font-bold">결제수단</th>
                 <th className="px-4 py-3 font-bold">상태</th>
                 <th className="px-4 py-3 font-bold">예약일시</th>
                 <th className="px-4 py-3 font-bold">관리</th>
@@ -140,13 +141,13 @@ export default function OrdersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-10 text-center text-muted">
                     불러오는 중...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted">
+                  <td colSpan={10} className="px-4 py-10 text-center text-muted">
                     조건에 맞는 구매 내역이 없습니다.
                   </td>
                 </tr>
@@ -162,6 +163,9 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 text-ink">{o.seatType ?? "-"}</td>
                     <td className="px-4 py-3 text-ink">{o.quantity}</td>
                     <td className="px-4 py-3 text-ink">{o.totalPrice.toLocaleString()}원</td>
+                    <td className="px-4 py-3 text-ink">
+                      {o.paymentMethod === "TRANSFER" ? "계좌결제" : o.paymentMethod === "CARD" ? "카드" : "-"}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-bold ${

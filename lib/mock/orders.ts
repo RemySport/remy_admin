@@ -12,6 +12,7 @@ function makeOrder(id: number): OrderSummary {
     paymentOrderId: STATUSES[id % STATUSES.length] === "PENDING" ? null : `MOCK-${id}`,
     paymentStatus: STATUSES[id % STATUSES.length] === "CANCELLED" ? "CANCELLED" :
       STATUSES[id % STATUSES.length] === "PAID" ? "PAID" : null,
+    paymentMethod: id % 3 === 0 ? "TRANSFER" : "CARD",
     buyerName: buyer,
     buyerEmail: `${buyer}@example.com`,
     ticketTitle: "FC 레미 vs 유나이티드",
