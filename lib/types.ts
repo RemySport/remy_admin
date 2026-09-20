@@ -164,6 +164,7 @@ export interface OrderSummary {
   orderId: number;
   paymentOrderId: string | null;
   paymentStatus: string | null;
+  paymentMethod: "CARD" | "TRANSFER" | null;
   buyerName: string;
   buyerEmail: string;
   ticketTitle: string;
@@ -179,6 +180,7 @@ export type RefundReason = "LEGAL_REFUND" | "MATCH_CANCELLED" | "SUPPLY_FAILED";
 export interface PaymentOperationResponse {
   orderId: string;
   status: string;
+  paymentMethod: "CARD" | "TRANSFER";
   paidAmount: number | null;
   approvedAt: string | null;
   reservationStatus: string;
