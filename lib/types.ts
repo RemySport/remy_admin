@@ -194,6 +194,47 @@ export interface OrderDetail {
 }
 
 // ---------------------------------------------------------------------------
+// 굿즈 결제(주문) 관리 — 구매관리 화면의 "굿즈" 탭
+// ---------------------------------------------------------------------------
+
+export interface AdminGoodsOrderItem {
+  goodsId: number;
+  name: string;
+  /** 예: "사이즈: M / 컬러: 레드". 옵션 없는 상품이면 빈 문자열 */
+  optionLabel: string | null;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface AdminGoodsOrderShipping {
+  recipientName: string;
+  shippingMethod: string;
+  zonecode: string;
+  address: string;
+  addressDetail: string;
+  deliveryMessage: string | null;
+}
+
+export interface AdminGoodsOrderSummary {
+  orderId: number;
+  buyerName: string;
+  buyerEmail: string;
+  items: AdminGoodsOrderItem[];
+  totalQuantity: number;
+  totalPrice: number;
+  status: string;
+  orderedAt: string | null;
+  /** 배송지 필드 추가 이전 주문은 null */
+  shipping: AdminGoodsOrderShipping | null;
+}
+
+export interface AdminGoodsOrderListResponse {
+  totalElements: number;
+  totalPages: number;
+  orders: AdminGoodsOrderSummary[];
+}
+
+// ---------------------------------------------------------------------------
 // 굿즈 관리
 // ---------------------------------------------------------------------------
 

@@ -9,7 +9,7 @@ import {
   mockAdminMe,
 } from "./mock/admin";
 import { mockGoodsDetail, mockGoodsList } from "./mock/goods";
-import { mockOrderDetail, mockOrders } from "./mock/orders";
+import { mockGoodsOrders, mockOrderDetail, mockOrders } from "./mock/orders";
 import {
   mockLeagues,
   mockStadiums,
@@ -22,6 +22,7 @@ import type {
   AdminAccountSummary,
   AdminGoodsDetail,
   AdminGoodsListResponse,
+  AdminGoodsOrderListResponse,
   AdminGradeListResponse,
   AdminGradeSummary,
   AdminMeResponse,
@@ -191,6 +192,30 @@ export function getOrder(id: number): Promise<ApiResult<OrderDetail>> {
 
 export function cancelOrder(id: number, reason?: string) {
   return apiRequest(`/admin/orders/${id}/cancel`, {
+    method: "PATCH",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 굿즈 결제(주문) 관리 — 필터 파라미터는 티켓 구매 목록(OrderQuery)과 동일
+// ---------------------------------------------------------------------------
+
+export function getGoodsOrders(
+  query: OrderQuery = {},
+): Promise<ApiResult<AdminGoodsOrderListResponse>> {
+  const params = new URLSearchParams();
+  if (query.status && query.status !== "전체") params.set("status", query.status);
+  if (query.keyword) params.set("keyword", query.keyword);
+  if (query.from) params.set("from", query.from);
+  if (query.to) params.set("to", query.to);
+  params.set("page", String(query.page ?? 1));
+  params.set("size", String(query.size ?? 20));
+  return fetchWithFallback(`/admin/goods-orders?${params.toString()}`, mockGoodsOrders);
+}
+
+export function cancelGoodsOrder(id: number, reason?: string) {
+  return apiRequest(`/admin/goods-orders/${id}/cancel`, {
     method: "PATCH",
     body: JSON.stringify({ reason }),
   });
