@@ -9,7 +9,7 @@ import {
   mockAdminMe,
 } from "./mock/admin";
 import { mockGoodsDetail, mockGoodsList } from "./mock/goods";
-import { mockOrderDetail, mockOrders } from "./mock/orders";
+import { mockGoodsOrders, mockOrderDetail, mockOrders } from "./mock/orders";
 import {
   mockLeagues,
   mockStadiums,
@@ -22,6 +22,7 @@ import type {
   AdminAccountSummary,
   AdminGoodsDetail,
   AdminGoodsListResponse,
+  AdminGoodsOrderListResponse,
   AdminGradeListResponse,
   AdminGradeSummary,
   AdminMeResponse,
@@ -200,6 +201,28 @@ export function refundPayment(orderId: string, reason: RefundReason) {
     method: "POST",
     body: JSON.stringify({ reason }),
   });
+}
+
+// ---------------------------------------------------------------------------
+// 굿즈 결제(주문) 관리 — 필터 파라미터는 티켓 구매 목록(OrderQuery)과 동일
+// ---------------------------------------------------------------------------
+
+export function getGoodsOrders(
+  query: OrderQuery = {},
+): Promise<ApiResult<AdminGoodsOrderListResponse>> {
+  const params = new URLSearchParams();
+  if (query.status && query.status !== "전체") params.set("status", query.status);
+  if (query.keyword) params.set("keyword", query.keyword);
+  if (query.from) params.set("from", query.from);
+  if (query.to) params.set("to", query.to);
+  params.set("page", String(query.page ?? 1));
+  params.set("size", String(query.size ?? 20));
+  const path = `/admin/goods-orders?${params.toString()}`;
+  // 운영에서는 결제 내역을 mock 으로 대체하면 안 되므로 폴백 없이 실패를 그대로 노출한다 (getOrders 와 동일).
+  if (process.env.NODE_ENV === "production") {
+    return apiRequest<AdminGoodsOrderListResponse>(path).then((data) => ({ data, fromMock: false }));
+  }
+  return fetchWithFallback(path, mockGoodsOrders);
 }
 
 // ---------------------------------------------------------------------------
