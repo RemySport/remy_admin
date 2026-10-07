@@ -47,20 +47,22 @@ export default function ProductsPage() {
 
   // 상태/리그/검색어를 바꾸면 1페이지부터 다시 본다.
   const handleStatusChange = (v: string) => {
+    setLoading(true);
     setStatus(v);
     setPage(1);
   };
   const handleLeagueChange = (v: string) => {
+    setLoading(true);
     setLeagueName(v);
     setPage(1);
   };
   const handleKeywordChange = (v: string) => {
+    setLoading(true);
     setKeyword(v);
     setPage(1);
   };
 
   const load = () => {
-    setLoading(true);
     getTickets({ status, keyword, leagueId, page, size: PAGE_SIZE }).then((res) => {
       setTickets(res.data.tickets);
       setTotal(res.data.totalElements);
@@ -72,19 +74,27 @@ export default function ProductsPage() {
 
   useEffect(load, [status, keyword, leagueId, page]);
 
+  const handlePageChange = (value: number) => {
+    setLoading(true);
+    setPage(value);
+  };
+
   const handleChangeStatus = async (id: number, reservationStatus: "OPEN" | "PENDING" | "CLOSED") => {
     await updateTicketStatus(id, { reservationStatus, isReservable: reservationStatus === "OPEN" });
+    setLoading(true);
     load();
   };
 
   const handleDelete = async (id: number) => {
     await deleteTicket(id);
+    setLoading(true);
     load();
   };
 
   const handleCreate = async (request: CreateTicketRequest) => {
     await createTicket(request);
     setFormOpen(false);
+    setLoading(true);
     load();
   };
 
@@ -97,6 +107,7 @@ export default function ProductsPage() {
     if (!editing) return;
     await updateTicket(editing.ticketId, request);
     setEditing(null);
+    setLoading(true);
     load();
   };
 
@@ -158,7 +169,7 @@ export default function ProductsPage() {
           </div>
         )}
 
-        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} />
       </main>
 
       {formOpen && <TicketFormModal onSubmit={handleCreate} onClose={() => setFormOpen(false)} />}

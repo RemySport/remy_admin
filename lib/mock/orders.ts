@@ -7,8 +7,8 @@ import type {
 } from "../types";
 
 export const ORDER_STATUS_FILTERS = ["전체", "PENDING", "PAID", "CANCELLED", "COMPLETED"];
-/** 굿즈 주문은 PENDING → PAID / CANCELLED 만 존재 */
-export const GOODS_ORDER_STATUS_FILTERS = ["전체", "PENDING", "PAID", "CANCELLED"];
+/** 굿즈 주문은 PENDING → PAYING → PAID / CANCELLED (COMPLETED 없음) */
+export const GOODS_ORDER_STATUS_FILTERS = ["전체", "PENDING", "PAYING", "PAID", "CANCELLED"];
 
 const BUYERS = ["장용호", "김서연", "이준혁", "박지민", "최유나"];
 const STATUSES = ["PAID", "PAID", "PENDING", "CANCELLED", "COMPLETED"];
@@ -17,6 +17,10 @@ function makeOrder(id: number): OrderSummary {
   const buyer = BUYERS[id % BUYERS.length];
   return {
     orderId: id,
+    paymentOrderId: STATUSES[id % STATUSES.length] === "PENDING" ? null : `MOCK-${id}`,
+    paymentStatus: STATUSES[id % STATUSES.length] === "CANCELLED" ? "CANCELLED" :
+      STATUSES[id % STATUSES.length] === "PAID" ? "PAID" : null,
+    paymentMethod: id % 3 === 0 ? "TRANSFER" : "CARD",
     buyerName: buyer,
     buyerEmail: `${buyer}@example.com`,
     ticketTitle: "FC 레미 vs 유나이티드",
@@ -48,14 +52,18 @@ function makeGoodsOrder(id: number): AdminGoodsOrderSummary {
     ...g,
     quantity: 1 + ((id + i) % 2),
   }));
+  const status = GOODS_ORDER_STATUS_FILTERS[1 + (id % (GOODS_ORDER_STATUS_FILTERS.length - 1))];
   return {
     orderId: id,
+    paymentOrderId: status === "PENDING" ? null : `MOCK-G${id}`,
+    paymentStatus: status === "PENDING" ? null : status,
+    paymentMethod: id % 3 === 0 ? "TRANSFER" : "CARD",
     buyerName: buyer,
     buyerEmail: `${buyer}@example.com`,
     items,
     totalQuantity: items.reduce((sum, i) => sum + i.quantity, 0),
     totalPrice: items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0),
-    status: GOODS_ORDER_STATUS_FILTERS[1 + (id % (GOODS_ORDER_STATUS_FILTERS.length - 1))],
+    status,
     orderedAt: new Date(2026, 8, (id % 27) + 1, 15, 30).toISOString(),
     shipping: {
       recipientName: buyer,

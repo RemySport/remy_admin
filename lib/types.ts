@@ -162,6 +162,9 @@ export interface TeamBrief {
 
 export interface OrderSummary {
   orderId: number;
+  paymentOrderId: string | null;
+  paymentStatus: string | null;
+  paymentMethod: "CARD" | "TRANSFER" | null;
   buyerName: string;
   buyerEmail: string;
   ticketTitle: string;
@@ -170,6 +173,17 @@ export interface OrderSummary {
   totalPrice: number;
   status: string;
   reservedAt: string | null;
+}
+
+export type RefundReason = "LEGAL_REFUND" | "MATCH_CANCELLED" | "SUPPLY_FAILED";
+
+export interface PaymentOperationResponse {
+  orderId: string;
+  status: string;
+  paymentMethod: "CARD" | "TRANSFER";
+  paidAmount: number | null;
+  approvedAt: string | null;
+  reservationStatus: string;
 }
 
 export interface OrderListResponse {
@@ -217,6 +231,10 @@ export interface AdminGoodsOrderShipping {
 
 export interface AdminGoodsOrderSummary {
   orderId: number;
+  /** 결제 시도 전이면 null */
+  paymentOrderId: string | null;
+  paymentStatus: string | null;
+  paymentMethod: "CARD" | "TRANSFER" | null;
   buyerName: string;
   buyerEmail: string;
   items: AdminGoodsOrderItem[];

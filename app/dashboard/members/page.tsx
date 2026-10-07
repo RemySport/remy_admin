@@ -34,7 +34,6 @@ export default function MembersPage() {
   // 필터가 바뀔 때마다 (가상)API 재요청 → 실패 시 mock
   useEffect(() => {
     let alive = true;
-    setLoading(true);
     getMembers({ group, status, keyword }).then((res) => {
       if (!alive) return;
       setMembers(res.data.members);
@@ -46,6 +45,21 @@ export default function MembersPage() {
       alive = false;
     };
   }, [group, status, keyword]);
+
+  const handleGroupChange = (value: string) => {
+    setLoading(true);
+    setGroup(value);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setLoading(true);
+    setStatus(value);
+  };
+
+  const handleKeywordChange = (value: string) => {
+    setLoading(true);
+    setKeyword(value);
+  };
 
   // mock 폴백 시에는 클라이언트에서 필터링 (실서버 붙으면 서버가 필터링)
   const visible = useMemo(() => {
@@ -85,18 +99,18 @@ export default function MembersPage() {
               value={group}
               hint="그룹선택"
               options={GROUP_FILTERS}
-              onChange={setGroup}
+              onChange={handleGroupChange}
             />
             <SelectBox
               value={status}
               hint="상태선택"
               options={STATUS_FILTERS}
-              onChange={setStatus}
+              onChange={handleStatusChange}
             />
             <div className="flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3.5 py-2.5">
               <input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => handleKeywordChange(e.target.value)}
                 placeholder="이름 / 닉네임 검색"
                 className="w-40 bg-transparent text-sm text-ink outline-none placeholder:text-[#bbbbbb]"
               />
