@@ -9,11 +9,16 @@ export interface GoodsFormValues {
   name: string;
   description: string;
   price: number;
+  discountRate: number;
   stock: number;
   imageUrls: string[];
   options: GoodsOptionInput[];
   variants?: GoodsVariantInput[];
 }
+
+/** 할인율 적용 판매가 — 백엔드 Goods.getSalePrice()와 같이 원 단위 미만은 버린다. */
+const salePriceOf = (price: number, discountRate: number) =>
+  Math.floor((price * (100 - discountRate)) / 100);
 
 /** 옵션 값 조합(예: ["M"], ["M", "블랙"])을 재고 맵의 키로 바꾼다. */
 const comboKey = (combo: string[]) => combo.join("␟");
@@ -37,6 +42,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(initial?.price ?? 0);
+  const [discountRate, setDiscountRate] = useState(initial?.discountRate ?? 0);
   const [stock, setStock] = useState(initial?.stock ?? 0);
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls ?? []);
   const [uploading, setUploading] = useState(false);
@@ -104,6 +110,10 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
       setError("상품명과 가격을 확인해주세요.");
       return;
     }
+    if (!Number.isInteger(discountRate) || discountRate < 0 || discountRate > 99) {
+      setError("할인율은 0~99 사이의 정수로 입력해주세요.");
+      return;
+    }
     if (hasOptions && combos.length === 0) {
       setError("옵션 값을 입력해주세요.");
       return;
@@ -117,6 +127,7 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
         name,
         description,
         price,
+        discountRate,
         stock: hasOptions ? totalVariantStock : stock,
         imageUrls,
         options,
@@ -159,13 +170,24 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
               className={`${inputClass} w-full`}
             />
           </div>
-          <div className={hasOptions ? "" : "grid grid-cols-2 gap-3"}>
+          <div className={hasOptions ? "grid grid-cols-2 gap-3" : "grid grid-cols-3 gap-3"}>
             <div>
               <label className={labelClass}>가격</label>
               <input
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
+                className={`${inputClass} w-full`}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>할인율 (%)</label>
+              <input
+                type="number"
+                min={0}
+                max={99}
+                value={discountRate}
+                onChange={(e) => setDiscountRate(Number(e.target.value))}
                 className={`${inputClass} w-full`}
               />
             </div>
@@ -181,6 +203,14 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
               </div>
             )}
           </div>
+
+          {discountRate > 0 && price > 0 && (
+            <p className="-mt-2 text-xs text-muted">
+              판매가{" "}
+              <span className="font-bold text-ink">{salePriceOf(price, discountRate).toLocaleString()}원</span>
+              <span className="ml-1.5 line-through">{price.toLocaleString()}원</span>
+            </p>
+          )}
 
           <div>
             <label className={labelClass}>이미지</label>
