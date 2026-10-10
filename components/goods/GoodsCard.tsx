@@ -85,7 +85,15 @@ export default function GoodsCard({
       <h3 className="mt-3 text-base font-extrabold text-ink">{goods.name}</h3>
 
       <p className="mt-1.5 text-sm text-ink">
-        {goods.price.toLocaleString()}원
+        {goods.discountRate > 0 ? (
+          <>
+            <span className="mr-1.5 font-extrabold text-[#da1d52]">{goods.discountRate}%</span>
+            <span className="font-bold">{goods.salePrice.toLocaleString()}원</span>
+            <span className="ml-1.5 text-xs text-muted line-through">{goods.price.toLocaleString()}원</span>
+          </>
+        ) : (
+          <>{goods.price.toLocaleString()}원</>
+        )}
         {goods.isSoldOut && (
           <span className="ml-3 rounded-full bg-[#da1d52]/10 px-2 py-0.5 text-xs font-bold text-[#da1d52]">
             품절

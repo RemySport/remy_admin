@@ -259,7 +259,12 @@ export interface AdminGoodsOrderListResponse {
 export interface AdminGoodsSummary {
   goodsId: number;
   name: string;
+  /** 정가 */
   price: number;
+  /** 할인율(%), 할인 없으면 0 */
+  discountRate: number;
+  /** 할인 적용 판매가 (원 단위 미만 버림) */
+  salePrice: number;
   stock: number;
   thumbnailUrl: string | null;
   isSoldOut: boolean;
@@ -289,6 +294,8 @@ export interface AdminGoodsDetail {
   name: string;
   description: string | null;
   price: number;
+  discountRate: number;
+  salePrice: number;
   stock: number;
   imageUrls: string[];
   options: AdminGoodsOption[];
@@ -309,6 +316,8 @@ export interface CreateGoodsRequest {
   name: string;
   description?: string | null;
   price: number;
+  /** 할인율(%), 0~99 */
+  discountRate?: number;
   stock?: number;
   imageUrls?: string[];
   options?: GoodsOptionInput[];

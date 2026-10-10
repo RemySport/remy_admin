@@ -7,6 +7,8 @@ function makeGoods(id: number): AdminGoodsSummary {
     goodsId: id,
     name: NAMES[id % NAMES.length],
     price: 15000 + (id % 4) * 10000,
+    discountRate: id % 3 === 0 ? 10 : 0,
+    salePrice: id % 3 === 0 ? Math.floor((15000 + (id % 4) * 10000) * 0.9) : 15000 + (id % 4) * 10000,
     stock: id % 6 === 0 ? 0 : 20 + (id % 5) * 10,
     thumbnailUrl: `https://image.domain.com/goods_${id}.png`,
     isSoldOut: id % 6 === 0,
@@ -26,6 +28,8 @@ export const mockGoodsDetail: AdminGoodsDetail = {
   name: "레미콘 한정판 후드티",
   description: "2026 레미콘을 기념하는 최고급 면 소재의 한정판 후드티입니다.",
   price: 45000,
+  discountRate: 10,
+  salePrice: 40500,
   stock: 120,
   imageUrls: [
     "https://image.domain.com/goods_501_main.png",
