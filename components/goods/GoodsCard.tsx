@@ -29,6 +29,10 @@ export default function GoodsCard({
     return () => document.removeEventListener("mousedown", onClick);
   }, [menuOpen]);
 
+  const taxonomyLine = [goods.taxonomy?.brandName, goods.taxonomy?.clubName, goods.taxonomy?.categoryName]
+    .filter(Boolean)
+    .join(" · ");
+
   const onMenuSelect = (item: (typeof MENU_ITEMS)[number]) => {
     setMenuOpen(false);
     if (item === "수정") onEdit(goods.goodsId);
@@ -82,7 +86,22 @@ export default function GoodsCard({
         />
       )}
 
-      <h3 className="mt-3 text-base font-extrabold text-ink">{goods.name}</h3>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {goods.status !== "ON_SALE" && (
+          <span className="rounded-full bg-[#111111]/10 px-2 py-0.5 text-[11px] font-bold text-ink">
+            {goods.status === "HIDDEN" ? "숨김" : "판매중지(공급처)"}
+          </span>
+        )}
+        {goods.source && (
+          <span className="rounded-full bg-[#f06418]/10 px-2 py-0.5 text-[11px] font-bold text-[#f06418]">
+            동기화
+          </span>
+        )}
+      </div>
+
+      {taxonomyLine && <p className="mt-2 text-xs text-muted">{taxonomyLine}</p>}
+
+      <h3 className="mt-1 text-base font-extrabold text-ink">{goods.name}</h3>
 
       <p className="mt-1.5 text-sm text-ink">
         {goods.discountRate > 0 ? (

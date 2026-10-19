@@ -265,9 +265,65 @@ export interface AdminGoodsSummary {
   discountRate: number;
   /** 할인 적용 판매가 (원 단위 미만 버림) */
   salePrice: number;
+  /** 옵션 조합(사이즈 등)별 재고 합계 */
   stock: number;
   thumbnailUrl: string | null;
   isSoldOut: boolean;
+  status: GoodsStatus;
+  /** 공급처 코드(CAPOSTORE). 직접 등록 상품은 null */
+  source: string | null;
+  taxonomy: AdminGoodsTaxonomy | null;
+}
+
+/** ON_SALE: 판매중 / HIDDEN: 관리자 숨김 / SOURCE_UNAVAILABLE: 공급처에서 내려가거나 할인으로 바뀌어 동기화가 판매중지 */
+export type GoodsStatus = "ON_SALE" | "HIDDEN" | "SOURCE_UNAVAILABLE";
+
+export interface AdminGoodsTaxonomy {
+  brandId: number | null;
+  brandName: string | null;
+  clubId: number | null;
+  clubName: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  /** true 면 관리자가 지정한 상품종류라 동기화 자동분류가 덮어쓰지 않음 */
+  categoryLocked: boolean;
+}
+
+/** 분류 선택지. extra 는 구단이면 리그, 상품종류면 code */
+export interface GoodsTaxonomyOption {
+  id: number;
+  name: string;
+  extra: string | null;
+}
+
+export interface GoodsTaxonomyOptionsResponse {
+  brands: GoodsTaxonomyOption[];
+  clubs: GoodsTaxonomyOption[];
+  categories: GoodsTaxonomyOption[];
+}
+
+export type GoodsSyncStatus = "RUNNING" | "SUCCEEDED" | "PARTIAL" | "FAILED";
+
+export interface GoodsSyncRun {
+  runId: number;
+  source: string;
+  /** GITHUB(주간 워크플로) / ADMIN(어드민 수동 실행) */
+  triggerType: string;
+  status: GoodsSyncStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  seenCount: number;
+  createdCount: number;
+  updatedCount: number;
+  unavailableCount: number;
+  skippedCount: number;
+  failedCount: number;
+  message: string | null;
+}
+
+export interface GoodsSyncRunListResponse {
+  totalElements: number;
+  runs: GoodsSyncRun[];
 }
 
 export interface AdminGoodsListResponse {
@@ -300,6 +356,13 @@ export interface AdminGoodsDetail {
   imageUrls: string[];
   options: AdminGoodsOption[];
   variants: AdminGoodsVariant[];
+  status: GoodsStatus;
+  source: string | null;
+  /** 공급처 상품 페이지 */
+  sourceUrl: string | null;
+  /** 마지막 공급처 동기화 시각 */
+  sourceSyncedAt: string | null;
+  taxonomy: AdminGoodsTaxonomy | null;
 }
 
 export interface GoodsOptionInput {
@@ -322,9 +385,16 @@ export interface CreateGoodsRequest {
   imageUrls?: string[];
   options?: GoodsOptionInput[];
   variants?: GoodsVariantInput[];
+  brandId?: number | null;
+  clubId?: number | null;
+  /** 지정하면 상품종류가 잠겨 동기화 자동분류가 덮어쓰지 않는다 */
+  categoryId?: number | null;
 }
 
-export type UpdateGoodsRequest = Partial<CreateGoodsRequest>;
+/** 공급처 동기화 상품은 options/variants 를 보낼 수 없다(409 GDS4015). status 는 ON_SALE/HIDDEN 만 가능. */
+export type UpdateGoodsRequest = Partial<CreateGoodsRequest> & {
+  status?: Exclude<GoodsStatus, "SOURCE_UNAVAILABLE">;
+};
 
 // ---------------------------------------------------------------------------
 // 어드민 계정 / 등급 / 메뉴 권한

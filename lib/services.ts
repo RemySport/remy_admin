@@ -8,7 +8,7 @@ import {
   mockAdminGrades,
   mockAdminMe,
 } from "./mock/admin";
-import { mockGoodsDetail, mockGoodsList } from "./mock/goods";
+import { mockGoodsDetail, mockGoodsList, mockGoodsSyncRuns, mockGoodsTaxonomy } from "./mock/goods";
 import { mockGoodsOrders, mockOrderDetail, mockOrders } from "./mock/orders";
 import {
   mockLeagues,
@@ -31,6 +31,9 @@ import type {
   CreateGoodsRequest,
   CreateTicketRequest,
   DashboardData,
+  GoodsStatus,
+  GoodsSyncRunListResponse,
+  GoodsTaxonomyOptionsResponse,
   LeagueBrief,
   MemberGroup,
   MemberListResponse,
@@ -231,6 +234,12 @@ export function getGoodsOrders(
 
 export interface GoodsQuery {
   keyword?: string;
+  brand?: number | null;
+  club?: number | null;
+  category?: number | null;
+  status?: GoodsStatus | "";
+  /** CAPOSTORE: 동기화 상품 / MANUAL: 직접 등록 상품 */
+  source?: "CAPOSTORE" | "MANUAL" | "";
   page?: number;
   size?: number;
 }
@@ -238,9 +247,28 @@ export interface GoodsQuery {
 export function getGoodsList(query: GoodsQuery = {}): Promise<ApiResult<AdminGoodsListResponse>> {
   const params = new URLSearchParams();
   if (query.keyword) params.set("keyword", query.keyword);
+  if (query.brand) params.set("brand", String(query.brand));
+  if (query.club) params.set("club", String(query.club));
+  if (query.category) params.set("category", String(query.category));
+  if (query.status) params.set("status", query.status);
+  if (query.source) params.set("source", query.source);
   params.set("page", String(query.page ?? 1));
   params.set("size", String(query.size ?? 20));
   return fetchWithFallback(`/admin/goods?${params.toString()}`, mockGoodsList);
+}
+
+/** 브랜드·구단·상품종류 전체 선택지 */
+export function getGoodsTaxonomy(): Promise<ApiResult<GoodsTaxonomyOptionsResponse>> {
+  return fetchWithFallback("/admin/goods/taxonomy", mockGoodsTaxonomy);
+}
+
+/** 카포스토어 동기화를 백그라운드로 시작한다. 이미 실행 중이면 409(GDS4012). */
+export function startCapostoreSync() {
+  return apiRequest<{ runId: number }>("/admin/goods-sync/capostore/runs", { method: "POST" });
+}
+
+export function getCapostoreSyncRuns(page = 1, size = 5): Promise<ApiResult<GoodsSyncRunListResponse>> {
+  return fetchWithFallback(`/admin/goods-sync/capostore/runs?page=${page}&size=${size}`, mockGoodsSyncRuns);
 }
 
 export function getGoods(id: number): Promise<ApiResult<AdminGoodsDetail>> {
