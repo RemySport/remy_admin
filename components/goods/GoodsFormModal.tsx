@@ -3,18 +3,16 @@
 import { Plus, Trash2, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { uploadGoodsImage } from "@/lib/services";
-import type { AdminGoodsDetail, GoodsOptionInput, GoodsVariantInput } from "@/lib/types";
+import type {
+  AdminGoodsDetail,
+  CreateGoodsRequest,
+  GoodsOptionInput,
+  GoodsTaxonomyOptionsResponse,
+  UpdateGoodsRequest,
+} from "@/lib/types";
 
-export interface GoodsFormValues {
-  name: string;
-  description: string;
-  price: number;
-  discountRate: number;
-  stock: number;
-  imageUrls: string[];
-  options: GoodsOptionInput[];
-  variants?: GoodsVariantInput[];
-}
+/** 등록(POST)·수정(PATCH) 요청 본문. 동기화 상품 수정 때는 options/variants/stock 을 보내지 않는다. */
+export type GoodsFormValues = CreateGoodsRequest & Pick<UpdateGoodsRequest, "status">;
 
 /** 할인율 적용 판매가 — 백엔드 Goods.getSalePrice()와 같이 원 단위 미만은 버린다. */
 const salePriceOf = (price: number, discountRate: number) =>
@@ -34,11 +32,20 @@ function buildCombos(options: GoodsOptionInput[]): string[][] {
 
 interface GoodsFormModalProps {
   initial?: AdminGoodsDetail | null;
+  taxonomy: GoodsTaxonomyOptionsResponse | null;
   onSubmit: (values: GoodsFormValues) => Promise<void>;
   onClose: () => void;
 }
 
-export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsFormModalProps) {
+const toId = (value: string) => (value ? Number(value) : null);
+
+export default function GoodsFormModal({ initial, taxonomy, onSubmit, onClose }: GoodsFormModalProps) {
+  // 공급처 동기화 상품: 사이즈/재고는 공급처 옵션 번호로 매칭되므로 여기서 바꿀 수 없다.
+  const sourceManaged = !!initial?.source;
+  const [brandId, setBrandId] = useState<number | null>(initial?.taxonomy?.brandId ?? null);
+  const [clubId, setClubId] = useState<number | null>(initial?.taxonomy?.clubId ?? null);
+  const [categoryId, setCategoryId] = useState<number | null>(initial?.taxonomy?.categoryId ?? null);
+  const [status, setStatus] = useState<"ON_SALE" | "HIDDEN" | "SOURCE_UNAVAILABLE">(initial?.status ?? "ON_SALE");
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(initial?.price ?? 0);
@@ -114,25 +121,39 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
       setError("할인율은 0~99 사이의 정수로 입력해주세요.");
       return;
     }
-    if (hasOptions && combos.length === 0) {
+    if (!sourceManaged && hasOptions && combos.length === 0) {
       setError("옵션 값을 입력해주세요.");
       return;
     }
     const variants = hasOptions
       ? combos.map((combo) => ({ optionValues: combo, stock: variantStocks[comboKey(combo)] ?? 0 }))
       : undefined;
+    // 분류는 바뀐 값만 보낸다 — 상품종류를 보내면 서버가 잠가서 이후 동기화 자동분류가 덮어쓰지 않는다.
+    const taxonomyChanges = {
+      brandId: brandId !== (initial?.taxonomy?.brandId ?? null) ? brandId : undefined,
+      clubId: clubId !== (initial?.taxonomy?.clubId ?? null) ? clubId : undefined,
+      categoryId: categoryId !== (initial?.taxonomy?.categoryId ?? null) ? categoryId : undefined,
+    };
+    const statusChange =
+      initial && status !== initial.status && status !== "SOURCE_UNAVAILABLE" ? status : undefined;
     setSubmitting(true);
     try {
-      await onSubmit({
-        name,
-        description,
-        price,
-        discountRate,
-        stock: hasOptions ? totalVariantStock : stock,
-        imageUrls,
-        options,
-        variants,
-      });
+      await onSubmit(
+        sourceManaged
+          ? { name, description, price, discountRate, imageUrls, ...taxonomyChanges, status: statusChange }
+          : {
+              name,
+              description,
+              price,
+              discountRate,
+              stock: hasOptions ? totalVariantStock : stock,
+              imageUrls,
+              options,
+              variants,
+              ...taxonomyChanges,
+              status: statusChange,
+            },
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "저장에 실패했습니다.");
     } finally {
@@ -157,6 +178,25 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6">
+          {sourceManaged && (
+            <div className="rounded-lg bg-[#f06418]/10 px-3.5 py-3 text-xs leading-relaxed text-ink">
+              카포스토어 동기화 상품입니다. 상품명·설명·가격·이미지는 다음 동기화 때 공급처 값으로 돌아가고,
+              사이즈별 재고는 동기화가 관리합니다. 할인율·분류·판매상태는 유지됩니다.
+              {initial?.sourceUrl && (
+                <>
+                  {" "}
+                  <a href={initial.sourceUrl} target="_blank" rel="noreferrer" className="font-bold underline">
+                    공급처 상품 보기
+                  </a>
+                </>
+              )}
+              {initial?.sourceSyncedAt && (
+                <span className="mt-1 block text-muted">
+                  마지막 동기화 {new Date(initial.sourceSyncedAt).toLocaleString("ko-KR")}
+                </span>
+              )}
+            </div>
+          )}
           <div>
             <label className={labelClass}>상품명</label>
             <input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} w-full`} />
@@ -212,6 +252,80 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
             </p>
           )}
 
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className={labelClass}>브랜드</label>
+              <select
+                value={brandId ?? ""}
+                onChange={(e) => setBrandId(toId(e.target.value))}
+                className={`${inputClass} w-full`}
+              >
+                <option value="">미지정</option>
+                {taxonomy?.brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>구단</label>
+              <select
+                value={clubId ?? ""}
+                onChange={(e) => setClubId(toId(e.target.value))}
+                className={`${inputClass} w-full`}
+              >
+                <option value="">미지정</option>
+                {taxonomy?.clubs.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.extra ? `${c.name} (${c.extra})` : c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>
+                상품종류{initial?.taxonomy?.categoryLocked ? " (고정)" : ""}
+              </label>
+              <select
+                value={categoryId ?? ""}
+                onChange={(e) => setCategoryId(toId(e.target.value))}
+                className={`${inputClass} w-full`}
+              >
+                <option value="">미지정</option>
+                {taxonomy?.categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {sourceManaged && !initial?.taxonomy?.categoryLocked && (
+            <p className="-mt-2 text-xs text-muted">
+              상품종류는 상품명으로 자동 분류됩니다. 직접 바꾸면 이후 동기화가 덮어쓰지 않습니다.
+            </p>
+          )}
+
+          {initial && (
+            <div>
+              <label className={labelClass}>판매 상태</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as typeof status)}
+                className={`${inputClass} w-full`}
+              >
+                <option value="ON_SALE">판매중</option>
+                <option value="HIDDEN">숨김</option>
+                {initial.status === "SOURCE_UNAVAILABLE" && (
+                  <option value="SOURCE_UNAVAILABLE" disabled>
+                    판매중지(공급처에서 내려가거나 할인 전환)
+                  </option>
+                )}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className={labelClass}>이미지</label>
             <input
@@ -244,6 +358,25 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
             )}
           </div>
 
+          {sourceManaged && initial && (
+            <div>
+              <label className={labelClass}>사이즈별 재고 (동기화 관리)</label>
+              <div className="flex flex-wrap gap-2">
+                {initial.variants.map((v) => (
+                  <span
+                    key={v.variantId ?? v.optionValues.join("/")}
+                    className={`rounded-lg border px-3 py-1.5 text-xs ${
+                      v.stock > 0 ? "border-[#dddddd] text-ink" : "border-[#eeeeee] text-[#bbbbbb]"
+                    }`}
+                  >
+                    {v.optionValues.join(" / ") || "기본"} <span className="font-bold">{v.stock}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!sourceManaged && (
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-xs font-bold text-muted">옵션 (예: 사이즈)</label>
@@ -282,8 +415,9 @@ export default function GoodsFormModal({ initial, onSubmit, onClose }: GoodsForm
               ))}
             </div>
           </div>
+          )}
 
-          {hasOptions && (
+          {!sourceManaged && hasOptions && (
             <div>
               <label className={labelClass}>옵션별 재고</label>
               {combos.length === 0 ? (
